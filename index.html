@@ -8,192 +8,256 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
   <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { background-color: #f8f9fa; font-family: 'Sarabun', sans-serif; }
-    .card { border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.08); border: none; }
+    body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; }
+    
+    /* สไตล์สำหรับหน้าล็อกอินที่สวยงาม */
+    .login-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #007bff 0%, #00d2ff 100%);
+      padding: 20px;
+    }
+    .login-card {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+      overflow: hidden;
+      width: 100%;
+      max-width: 400px;
+    }
+    .login-header {
+      background: #f8f9fa;
+      padding: 30px 20px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+    .login-icon { font-size: 50px; color: #007bff; margin-bottom: 15px; }
+    .btn-login {
+      border-radius: 50px;
+      padding: 12px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      transition: all 0.3s;
+    }
+    .btn-login:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,123,255,0.4); }
+
+    /* สไตล์ทั่วไปของแอป */
+    .app-wrapper { padding-top: 15px; }
+    .card { border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: none; }
     .text-red { color: #dc3545; font-weight: bold; }
     .duplicate-alert { background-color: #fff3cd !important; border: 2px solid #ffc107 !important; }
-    .navbar { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .navbar { box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body>
   <div id="app">
     
-    <nav class="navbar navbar-light bg-white mb-4 px-3 d-flex justify-content-between">
-      <button class="btn btn-outline-dark btn-sm" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarAdmin">
-        ⚙️ Admin
-      </button>
-      <span class="navbar-brand mb-0 h1 text-primary fw-bold mx-auto">Cenpay Alert</span>
-      <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarHistory" v-if="page !== 'login'">
-        🕒 ประวัติ
-      </button>
-    </nav>
+    <div v-if="page === 'login'" class="login-wrapper">
+      <div class="login-card animate__animated animate__fadeIn">
+        <div class="login-header">
+          <i class="fa-solid fa-shield-halved login-icon"></i>
+          <h3 class="fw-bold text-primary mb-0">Cenpay Alert</h3>
+          <p class="text-muted small mt-1">ระบบตรวจสอบความผิดปกติ</p>
+        </div>
+        <div class="p-4">
+          <label class="form-label text-muted small fw-bold">รหัส AreaCode ของคุณ</label>
+          <div class="input-group mb-4">
+            <span class="input-group-text bg-white"><i class="fa-solid fa-user text-muted"></i></span>
+            <input type="text" class="form-control form-control-lg fs-6" v-model="amCode" placeholder="ระบุ AreaCode (เช่น AM 503)">
+          </div>
+          <button class="btn btn-primary btn-login w-100" @click="loadSummary">
+            เข้าสู่ระบบ <i class="fa-solid fa-arrow-right ms-2"></i>
+          </button>
+          <div class="text-center mt-4">
+            <a href="#" class="text-muted small text-decoration-none" data-bs-toggle="offcanvas" data-bs-target="#sidebarAdmin">
+              <i class="fa-solid fa-gear"></i> เข้าสู่โหมดผู้ดูแลระบบ (Admin)
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-else class="app-wrapper">
+      <nav class="navbar navbar-light bg-white mb-4 px-3 d-flex justify-content-between sticky-top">
+        <button class="btn btn-outline-dark btn-sm rounded-pill px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarAdmin">
+          <i class="fa-solid fa-gear"></i> Admin
+        </button>
+        <span class="navbar-brand mb-0 h5 text-primary fw-bold mx-auto"><i class="fa-solid fa-shield-halved me-1"></i> Cenpay Alert</span>
+        <button class="btn btn-outline-primary btn-sm rounded-pill px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarHistory">
+          <i class="fa-solid fa-clock-rotate-left"></i> ประวัติ
+        </button>
+      </nav>
+
+      <div class="container pb-5">
+        
+        <div v-if="page === 'home'" class="row justify-content-center">
+          <div class="col-md-8 col-sm-12">
+            <button class="btn btn-light mb-3 btn-sm border" @click="page = 'login'">
+              <i class="fa-solid fa-arrow-left"></i> ออกจากระบบ
+            </button>
+            <div class="card p-4">
+              <h5 class="mb-4 fw-bold"><i class="fa-solid fa-list-check text-primary me-2"></i>รายการรอตรวจสอบ ({{amCode}})</h5>
+              <div v-if="loading" class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+              <ul class="list-group list-group-flush" v-else>
+                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3" v-for="item in summaryList" :key="item.date">
+                  <span class="fw-bold"><i class="fa-regular fa-calendar-days text-muted me-2"></i>{{ item.date }}</span>
+                  <span>
+                    <span class="badge bg-danger rounded-pill me-3 fs-6">{{ item.count }} Txn</span>
+                    <button class="btn btn-primary btn-sm rounded-pill px-3" @click="startChecking(item.date)">ตรวจสอบ</button>
+                  </span>
+                </li>
+                <li class="list-group-item text-center text-muted py-5" v-if="summaryList.length === 0">
+                  <i class="fa-solid fa-circle-check fs-1 text-success mb-3 d-block"></i>
+                  ไม่มีรายการรอตรวจสอบแล้ว เยี่ยมมาก!
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="page === 'checking'" class="row justify-content-center">
+          <div class="col-md-8 col-sm-12">
+            <div v-if="stores.length > 0">
+              <div class="alert alert-primary shadow-sm mb-3">
+                <h5 class="fw-bold mb-2"><i class="fa-solid fa-store me-2"></i>{{ currentStore.StoreCode }} - {{ currentStore.StoreNameE }}</h5>
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="badge bg-white text-primary border border-primary fs-6">สาขาที่ {{ currentStoreIndex + 1 }} / {{ stores.length }}</span>
+                  <span class="badge bg-danger fs-6">สาขานี้มี {{ currentStore.transactions.length }} Txn</span>
+                </div>
+              </div>
+
+              <div class="card p-3 mb-3" v-for="(txn, idx) in currentStore.transactions" :key="idx" :class="{'duplicate-alert': txn.isDuplicate}">
+                <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
+                  <span class="text-muted small fw-bold">ลำดับที่ {{ idx + 1 }} | วันที่: {{ txn.date }}</span>
+                  <span class="badge bg-warning text-dark border border-warning" v-if="txn.isDuplicate"><i class="fa-solid fa-triangle-exclamation"></i> บัญชีซ้ำ</span>
+                </div>
+                <div class="mb-3">
+                  <div class="mb-1"><strong>ชื่อบัญชี:</strong> <span :class="{'text-danger fw-bold': txn.isDuplicate}">{{ txn.Ref1 }}</span></div>
+                  <div><strong>จำนวนเงิน:</strong> <span class="text-primary fw-bold fs-5">{{ txn.Amount }} ฿</span> | <strong>ประเภท:</strong> <span class="badge bg-secondary">{{ txn.BillType }}</span></div>
+                </div>
+                <div class="row g-2 bg-light p-2 rounded">
+                  <div class="col-12 col-md-4">
+                    <label class="form-label small mb-1 text-muted fw-bold">ประเภท</label>
+                    <select class="form-select form-select-sm" v-model="txn.checkData.Type">
+                      <option value="">-- เลือก --</option>
+                      <option value="พนักงาน">พนักงาน</option>
+                      <option value="ลูกค้า">ลูกค้า</option>
+                    </select>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label class="form-label small mb-1 text-muted fw-bold">มีเงินสดหรือไม่</label>
+                    <select class="form-select form-select-sm" v-model="txn.checkData.Cash_Exist">
+                      <option value="">-- เลือก --</option>
+                      <option value="มี">มี</option>
+                      <option value="ไม่มี">ไม่มี</option>
+                    </select>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label class="form-label small mb-1 text-muted fw-bold">ความผิดปกติ</label>
+                    <select class="form-select form-select-sm" v-model="txn.checkData.Is_Abnormal">
+                      <option value="">-- เลือก --</option>
+                      <option value="ใช่">ใช่ (ผิดปกติ)</option>
+                      <option value="ไม่ใช่">ไม่ใช่ (ปกติ)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex justify-content-between mt-4">
+                 <button class="btn btn-outline-secondary rounded-pill px-4" @click="page = 'home'">ย้อนกลับ</button>
+                 <button class="btn btn-success rounded-pill px-4" @click="nextStore" :disabled="!isStoreValid || loading">
+                   <span v-if="loading" class="spinner-border spinner-border-sm"></span>
+                   {{ currentStoreIndex === stores.length - 1 ? 'เสร็จสิ้นและบันทึก' : 'สาขาถัดไป' }} <i class="fa-solid fa-arrow-right ms-1"></i>
+                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="page === 'report'" class="row justify-content-center">
+          <div class="col-md-8 col-sm-12">
+            <div class="card p-4 text-center mb-4 border-success border-2">
+              <i class="fa-solid fa-circle-check text-success" style="font-size: 60px; margin-bottom: 15px;"></i>
+              <h3 class="text-success fw-bold mb-4">สรุปผลการตรวจสอบ</h3>
+              
+              <div class="bg-light p-4 rounded text-start fs-6 border" id="reportText" style="line-height: 1.8;">
+                AM: <strong>{{ amCode }}</strong><br>
+                สรุปการตรวจสอบ Cenpay Alert<br>
+                วันที่: <strong>{{ checkedDate }}</strong><br>
+                จำนวนรวม = <strong>{{ reportSummary.totalTxn }}</strong> ครั้ง<br>
+                จำนวนบัญชีปลายทางที่ผิดปกติ = <strong class="text-danger">{{ reportSummary.abnormalCount }}</strong><br>
+                บัญชีรับโอนเป็นพนักงานสาขา = <strong class="text-primary">{{ reportSummary.employeeCount }}</strong>
+              </div>
+              
+              <div class="d-grid gap-2 d-md-block text-center mt-4">
+                <button class="btn btn-primary rounded-pill px-4 mx-1 my-1" @click="copyReport"><i class="fa-solid fa-copy me-2"></i>คัดลอกข้อความ</button>
+                <button class="btn btn-success rounded-pill px-4 mx-1 my-1" @click="downloadExcel"><i class="fa-solid fa-file-excel me-2"></i>ดาวน์โหลด Excel</button>
+              </div>
+            </div>
+            <button class="btn btn-outline-secondary w-100 rounded-pill py-2" @click="page = 'home'; loadSummary()">กลับหน้าหลัก</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
 
     <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarAdmin">
       <div class="offcanvas-header bg-dark text-white">
-        <h5 class="offcanvas-title">⚙️ โหมดแอดมิน</h5>
+        <h5 class="offcanvas-title"><i class="fa-solid fa-gear me-2"></i>โหมดผู้ดูแลระบบ</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
       </div>
       <div class="offcanvas-body">
         <div v-if="!isAdminLogged">
-          <label>รหัสผ่านเข้า Admin:</label>
-          <input type="password" class="form-control mb-2" v-model="adminPass">
-          <button class="btn btn-dark w-100" @click="loginAdmin">เข้าสู่ระบบ Admin</button>
+          <label class="form-label text-muted small fw-bold">รหัสผ่านเข้า Admin:</label>
+          <input type="password" class="form-control mb-3" v-model="adminPass">
+          <button class="btn btn-dark w-100 rounded-pill" @click="loginAdmin">เข้าสู่ระบบ Admin</button>
         </div>
         <div v-else>
-          <div class="alert alert-success small">อัปโหลดล่าสุด: <br><strong>{{ lastUploadTime }}</strong></div>
+          <div class="alert alert-success small"><i class="fa-solid fa-clock me-2"></i>อัปโหลดล่าสุด: <br><strong>{{ lastUploadTime }}</strong></div>
           <hr>
-          <h6 class="fw-bold">อัปโหลดไฟล์ RAW_Data ประจำวัน (CSV)</h6>
-          <input type="file" class="form-control mb-3" accept=".csv" @change="handleFileUpload">
-          <button class="btn btn-primary w-100" @click="uploadCSVData" :disabled="uploading">
-            <span v-if="uploading" class="spinner-border spinner-border-sm"></span>
+          <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-file-excel me-2"></i>อัปโหลดไฟล์ RAW_Data (.xlsx)</h6>
+          <input type="file" class="form-control mb-3" accept=".xlsx, .xls" @change="handleFileUpload">
+          <button class="btn btn-primary w-100 rounded-pill mb-4" @click="uploadExcelData" :disabled="uploading">
+            <span v-if="uploading" class="spinner-border spinner-border-sm me-2"></span>
             {{ uploading ? 'กำลังอัปโหลด...' : 'อัปโหลดเข้าฐานข้อมูล' }}
           </button>
-          <button class="btn btn-outline-secondary w-100 mt-3" @click="isAdminLogged = false">ออกจากระบบ Admin</button>
+          <button class="btn btn-outline-danger w-100 rounded-pill" @click="isAdminLogged = false">ออกจากระบบ Admin</button>
         </div>
       </div>
     </div>
 
     <div class="offcanvas offcanvas-end" tabindex="-1" id="sidebarHistory">
       <div class="offcanvas-header bg-primary text-white">
-        <h5 class="offcanvas-title">ประวัติการตรวจสอบ</h5>
+        <h5 class="offcanvas-title"><i class="fa-solid fa-clock-rotate-left me-2"></i>ประวัติการตรวจสอบ</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" id="closeHistoryBtn"></button>
       </div>
       <div class="offcanvas-body">
-        <h6 class="text-muted mb-3">AM: {{ amCode }}</h6>
-        <div class="text-center mt-3" v-if="loadingHistory">
-          <div class="spinner-border text-primary spinner-border-sm"></div> กำลังโหลด...
+        <h6 class="text-muted fw-bold mb-3 border-bottom pb-2">ผู้ใช้งาน: {{ amCode }}</h6>
+        <div class="text-center mt-4" v-if="loadingHistory">
+          <div class="spinner-border text-primary"></div>
         </div>
-        <ul class="list-group" v-else>
-          <li class="list-group-item" v-for="h in historyList" :key="h.date">
-            <div class="d-flex justify-content-between align-items-center mb-1">
-              <strong>📅 {{ h.date }}</strong>
-              <span class="badge bg-success rounded-pill">{{ h.total }} Txn</span>
+        <div v-else>
+          <div v-if="historyList.length === 0" class="text-center text-muted mt-5">
+            <i class="fa-solid fa-folder-open fs-1 mb-2 text-light"></i><br>ยังไม่มีประวัติการตรวจสอบ
+          </div>
+          <div class="card mb-2 bg-light border-0 shadow-sm" v-for="h in historyList" :key="h.date">
+            <div class="card-body p-3">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fw-bold text-dark"><i class="fa-regular fa-calendar me-2 text-primary"></i>{{ h.date }}</span>
+                <span class="badge bg-success rounded-pill">{{ h.total }} Txn</span>
+              </div>
+              <div class="text-danger small mb-3 fw-bold" v-if="h.abnormal > 0"><i class="fa-solid fa-circle-exclamation me-1"></i>พบผิดปกติ {{ h.abnormal }} รายการ</div>
+              <button class="btn btn-sm btn-outline-primary w-100 rounded-pill" @click="viewHistoryDetail(h.date)">ดูรายละเอียด / ดาวน์โหลด</button>
             </div>
-            <div class="text-danger small mb-2" v-if="h.abnormal > 0">⚠️ พบผิดปกติ {{ h.abnormal }} รายการ</div>
-            <button class="btn btn-sm btn-outline-info w-100" @click="viewHistoryDetail(h.date)">ดูรายละเอียดและ Report</button>
-          </li>
-          <li class="list-group-item text-center text-muted" v-if="historyList.length === 0">ยังไม่มีประวัติการตรวจสอบ</li>
-        </ul>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="container pb-5">
-      
-      <div v-if="page === 'login'" class="row justify-content-center mt-5">
-        <div class="col-md-5 col-sm-12">
-          <div class="card p-4">
-            <h5 class="mb-3 text-center">ลงชื่อเข้าใช้ระบบ (AM)</h5>
-            <input type="text" class="form-control mb-3" v-model="amCode" placeholder="ระบุ AreaCode (เช่น AM 503)">
-            <button class="btn btn-primary w-100 py-2" @click="loadSummary">เข้าสู่ระบบ</button>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="page === 'home'" class="row justify-content-center">
-        <div class="col-md-8 col-sm-12">
-          <button class="btn btn-secondary mb-3 btn-sm" @click="page = 'login'">ออกจากระบบ</button>
-          <div class="card p-4">
-            <h5 class="mb-3">รายการรอตรวจสอบ ({{amCode}})</h5>
-            <div v-if="loading" class="text-center py-3"><div class="spinner-border text-primary"></div></div>
-            <ul class="list-group" v-else>
-              <li class="list-group-item d-flex justify-content-between align-items-center" v-for="item in summaryList" :key="item.date">
-                {{ item.date }}
-                <span>
-                  <span class="text-red me-3">{{ item.count }} Txn</span>
-                  <button class="btn btn-outline-primary btn-sm" @click="startChecking(item.date)">เข้าตรวจสอบ</button>
-                </span>
-              </li>
-              <li class="list-group-item text-center text-muted py-4" v-if="summaryList.length === 0">ไม่มีรายการรอตรวจสอบแล้ว</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="page === 'checking'" class="row justify-content-center">
-        <div class="col-md-8 col-sm-12">
-          <div v-if="stores.length > 0">
-            <div class="alert alert-info shadow-sm mb-3">
-              <h5 class="fw-bold text-primary mb-2">🏪 {{ currentStore.StoreCode }} - {{ currentStore.StoreNameE }}</h5>
-              <div class="d-flex justify-content-between align-items-center">
-                <span class="badge bg-primary fs-6">สาขาที่ {{ currentStoreIndex + 1 }} / {{ stores.length }}</span>
-                <span class="badge bg-danger fs-6">สาขานี้มี {{ currentStore.transactions.length }} Txn</span>
-              </div>
-            </div>
-
-            <div class="card p-3 mb-3" v-for="(txn, idx) in currentStore.transactions" :key="idx" :class="{'duplicate-alert': txn.isDuplicate}">
-              <div class="d-flex justify-content-between mb-2">
-                <span class="text-muted small">ลำดับที่ {{ idx + 1 }} | วันที่: {{ txn.date }}</span>
-                <span class="badge bg-warning text-dark border border-warning" v-if="txn.isDuplicate">⚠️ ตรวจพบชื่อบัญชีซ้ำ</span>
-              </div>
-              <div class="mb-3 pb-2 border-bottom">
-                <div><strong>ชื่อบัญชี:</strong> <span :class="{'text-danger fw-bold': txn.isDuplicate}">{{ txn.Ref1 }}</span></div>
-                <div><strong>จำนวนเงิน:</strong> <span class="text-primary fw-bold">{{ txn.Amount }} ฿</span> | <strong>ประเภท:</strong> {{ txn.BillType }}</div>
-              </div>
-              <div class="row g-2">
-                <div class="col-12 col-md-4">
-                  <label class="form-label small mb-1 text-muted">ประเภท</label>
-                  <select class="form-select form-select-sm" v-model="txn.checkData.Type">
-                    <option value="">-- เลือก --</option>
-                    <option value="พนักงาน">พนักงาน</option>
-                    <option value="ลูกค้า">ลูกค้า</option>
-                  </select>
-                </div>
-                <div class="col-12 col-md-4">
-                  <label class="form-label small mb-1 text-muted">มีเงินสดหรือไม่</label>
-                  <select class="form-select form-select-sm" v-model="txn.checkData.Cash_Exist">
-                    <option value="">-- เลือก --</option>
-                    <option value="มี">มี</option>
-                    <option value="ไม่มี">ไม่มี</option>
-                  </select>
-                </div>
-                <div class="col-12 col-md-4">
-                  <label class="form-label small mb-1 text-muted">ความผิดปกติ</label>
-                  <select class="form-select form-select-sm" v-model="txn.checkData.Is_Abnormal">
-                    <option value="">-- เลือก --</option>
-                    <option value="ใช่">ใช่ (ผิดปกติ)</option>
-                    <option value="ไม่ใช่">ไม่ใช่ (ปกติ)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div class="d-flex justify-content-between mt-4">
-               <button class="btn btn-outline-secondary" @click="page = 'home'">ย้อนกลับ</button>
-               <button class="btn btn-success px-4" @click="nextStore" :disabled="!isStoreValid || loading">
-                 <span v-if="loading" class="spinner-border spinner-border-sm"></span>
-                 {{ currentStoreIndex === stores.length - 1 ? 'เสร็จสิ้นและบันทึก' : 'ตรวจสอบสาขาถัดไป ➔' }}
-               </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="page === 'report'" class="row justify-content-center">
-        <div class="col-md-8 col-sm-12">
-          <div class="card p-4 text-center mb-3">
-            <h4 class="text-success fw-bold mb-3">สรุปผลการตรวจสอบ</h4>
-            
-            <div class="alert alert-success text-start" id="reportText">
-              AM: {{ amCode }}<br>
-              สรุปการตรวจสอบ Cenpay Alert<br>
-              วันที่: {{ checkedDate }}<br>
-              จำนวนรวม = {{ reportSummary.totalTxn }} ครั้ง<br>
-              จำนวนบัญชีปลายทางที่ผิดปกติ = {{ reportSummary.abnormalCount }}<br>
-              บัญชีรับโอนเป็นพนักงานสาขา = {{ reportSummary.employeeCount }}
-            </div>
-            
-            <div class="d-grid gap-2 d-md-block text-center mt-3">
-              <button class="btn btn-primary mx-1" @click="copyReport">📋 คัดลอกข้อความสรุป</button>
-              <button class="btn btn-success mx-1" @click="downloadExcel">📊 ดาวน์โหลด Excel</button>
-            </div>
-          </div>
-          
-          <button class="btn btn-outline-secondary w-100" @click="page = 'home'; loadSummary()">กลับหน้าหลัก</button>
-        </div>
-      </div>
-
-    </div>
   </div>
 
   <script>
@@ -203,15 +267,14 @@
       el: '#app',
       data: {
         page: 'login',
-        amCode: 'AM 503',
+        amCode: '', // เอาค่า AM 503 ออกตามที่ระบุ
         loading: false, loadingHistory: false,
         summaryList: [], historyList: [],
         stores: [], currentStoreIndex: 0,
         checkedResults: [], checkedDate: '',
         reportSummary: { totalTxn: 0, abnormalCount: 0, employeeCount: 0 },
-        detailData: [], // ข้อมูลสำหรับสร้างไฟล์ Excel
+        detailData: [], 
         
-        // สำหรับระบบ Admin
         isAdminLogged: false,
         adminPass: '',
         uploadFile: null,
@@ -225,10 +288,7 @@
           return this.currentStore.transactions.every(t => t.checkData.Type !== '' && t.checkData.Cash_Exist !== '' && t.checkData.Is_Abnormal !== '');
         }
       },
-      mounted() {
-        // ดึงเวลาอัปโหลดล่าสุดเมื่อโหลดแอป
-        this.fetchLastUploadTime();
-      },
+      mounted() { this.fetchLastUploadTime(); },
       methods: {
         async callAPI(payload) {
           try {
@@ -245,11 +305,10 @@
           }
         },
 
-        // --- ฟังก์ชัน Admin ---
+        // --- ระบบ Admin (.xlsx Upload) ---
         loginAdmin() {
-          if(this.adminPass === 'admin1234') { // รหัสผ่านแอดมิน
-            this.isAdminLogged = true;
-            this.adminPass = '';
+          if(this.adminPass === 'admin1234') { 
+            this.isAdminLogged = true; this.adminPass = '';
           } else { alert('รหัสผ่านไม่ถูกต้อง!'); }
         },
         async fetchLastUploadTime() {
@@ -259,28 +318,42 @@
         handleFileUpload(event) {
           this.uploadFile = event.target.files[0];
         },
-        async uploadCSVData() {
-          if(!this.uploadFile) return alert('กรุณาเลือกไฟล์ CSV ก่อนครับ');
+        async uploadExcelData() {
+          if(!this.uploadFile) return alert('กรุณาเลือกไฟล์ .xlsx ก่อนครับ');
           this.uploading = true;
+          
+          // ใช้ SheetJS อ่านไฟล์ Excel ฝั่ง Client
           const reader = new FileReader();
           reader.onload = async (e) => {
-            const base64 = e.target.result.split(',')[1];
-            const newTime = await this.callAPI({ action: 'uploadCSV', csvData: base64 });
-            if(newTime && !newTime.includes("Error")) {
-              this.lastUploadTime = newTime;
-              alert('อัปโหลดไฟล์สำเร็จ ข้อมูลพร้อมใช้งานแล้ว');
-            } else {
-              alert('เกิดข้อผิดพลาดในการอัปโหลด');
+            try {
+              const data = new Uint8Array(e.target.result);
+              const workbook = XLSX.read(data, {type: 'array', cellDates: true});
+              const firstSheetName = workbook.SheetNames[0]; // อ่าน Sheet แรก
+              const worksheet = workbook.Sheets[firstSheetName];
+              
+              // แปลงข้อมูลเป็น Array 2 มิติ (คล้ายกับที่ Apps Script ต้องการ)
+              const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, raw: false, defval: ""});
+              
+              if(jsonData.length > 0) {
+                const newTime = await this.callAPI({ action: 'uploadExcel', excelData: jsonData });
+                if(newTime && !newTime.includes("Error")) {
+                  this.lastUploadTime = newTime;
+                  alert('อัปโหลดไฟล์สำเร็จ ข้อมูลพร้อมใช้งานแล้ว');
+                } else { alert('เกิดข้อผิดพลาด: ' + newTime); }
+              } else { alert("ไม่พบข้อมูลในไฟล์ Excel"); }
+            } catch (err) {
+              alert("เกิดข้อผิดพลาดในการอ่านไฟล์: " + err.message);
             }
             this.uploading = false;
             this.uploadFile = null;
           };
-          reader.readAsDataURL(this.uploadFile);
+          // อ่านไฟล์เป็น ArrayBuffer
+          reader.readAsArrayBuffer(this.uploadFile);
         },
 
-        // --- ฟังก์ชันหลักของผู้ใช้งาน ---
+        // --- ฟังก์ชันหลัก ---
         async loadSummary() {
-          if(!this.amCode) { alert('กรุณาระบุ AreaCode'); return; }
+          if(!this.amCode) { alert('กรุณาระบุ AreaCode ก่อนเข้าสู่ระบบ'); return; }
           this.loading = true; this.page = 'home';
           this.fetchHistory();
           this.summaryList = await this.callAPI({ action: 'getSummary', amCode: this.amCode }) || [];
@@ -331,16 +404,14 @@
           } else {
             this.loading = true;
             await this.callAPI({ action: 'saveResult', results: this.checkedResults, amLogin: this.amCode });
-            // เตรียมหน้า Report
             this.prepareReportData(this.checkedDate);
           }
         },
 
-        // --- ฟังก์ชันดึงประวัติเพื่อดู Report และดาวน์โหลด Excel ---
+        // --- ประวัติและ Export Excel ---
         async viewHistoryDetail(date) {
-          document.getElementById('closeHistoryBtn').click(); // ปิด sidebar
-          this.loading = true;
-          this.checkedDate = date;
+          document.getElementById('closeHistoryBtn').click();
+          this.loading = true; this.checkedDate = date;
           await this.prepareReportData(date);
         },
         async prepareReportData(date) {
@@ -353,34 +424,18 @@
         copyReport() {
           navigator.clipboard.writeText(document.getElementById('reportText').innerText).then(() => alert('คัดลอกข้อความสรุปเรียบร้อยแล้ว!'));
         },
-        
-        // --- ฟังก์ชันสร้างและโหลดไฟล์ Excel ---
         downloadExcel() {
           if(!this.detailData || this.detailData.length === 0) return alert('ไม่พบข้อมูลสำหรับดาวน์โหลด');
-          
-          // เปลี่ยนชื่อหัวคอลัมน์ให้เป็นภาษาไทยที่อ่านง่ายและจัดเรียงข้อมูล
           const formattedData = this.detailData.map(row => ({
-            "วันที่ตรวจสอบ": row.date,
-            "AM ที่ตรวจสอบ": row.AM_Login,
-            "DM": row.DM,
-            "รหัสสาขา": row.StoreCode,
-            "ชื่อสาขา": row.StoreNameE,
-            "Ref1 (ชื่อบัญชีปลายทาง)": row.Ref1,
-            "จำนวนเงิน": row.Amount,
-            "จำนวน Txn": row.Txn,
-            "ประเภทธนาคาร": row.BillType,
-            "ผลตรวจ: ประเภทบัญชี": row.Type,
-            "ผลตรวจ: มีเงินสดจริงหรือไม่": row.Cash_Exist,
-            "ผลตรวจ: พบความผิดปกติ": row.Is_Abnormal,
-            "วัน/เวลาที่บันทึก": row.Check_Time
+            "วันที่ตรวจสอบ": row.date, "AM ที่ตรวจสอบ": row.AM_Login, "DM": row.DM,
+            "รหัสสาขา": row.StoreCode, "ชื่อสาขา": row.StoreNameE, "Ref1 (ชื่อบัญชีปลายทาง)": row.Ref1,
+            "จำนวนเงิน": row.Amount, "จำนวน Txn": row.Txn, "ประเภทธนาคาร": row.BillType,
+            "ผลตรวจ: ประเภทบัญชี": row.Type, "ผลตรวจ: มีเงินสดจริงหรือไม่": row.Cash_Exist,
+            "ผลตรวจ: พบความผิดปกติ": row.Is_Abnormal, "วัน/เวลาที่บันทึก": row.Check_Time
           }));
-
-          // สร้างแผ่นงาน Excel (Worksheet & Workbook)
           const ws = XLSX.utils.json_to_sheet(formattedData);
           const wb = XLSX.utils.book_new();
           XLSX.utils.book_append_sheet(wb, ws, "Checked_Data");
-
-          // บันทึกไฟล์ลงเครื่อง
           XLSX.writeFile(wb, `Cenpay_Report_${this.amCode}_${this.checkedDate.replace(/\//g, '-')}.xlsx`);
         }
       }

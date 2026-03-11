@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Cenpay Alert Checking</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+  <style>
+    body { background-color: #f8f9fa; font-family: 'Sarabun', sans-serif; }
+    .card { border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .text-red { color: #dc3545; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div id="app" class="container py-4">
+    <div class="text-center mb-4">
+      <h2 class="fw-bold text-primary">Cenpay Alert Tracking</h2>
+    </div>
+
+    <div v-if="page === 'login'" class="row justify-content-center">
+      <div class="col-md-6 col-sm-12">
+        <div class="card p-4">
+          <h5 class="mb-3 text-center">ลงชื่อเข้าใช้ / ค้นหา</h5>
+          <input type="text" class="form-control mb-3" v-model="amCode" placeholder="รหัสสาขา หรือ AM">
+          <button class="btn btn-primary w-100" @click="loadSummary">เข้าสู่ระบบ</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="page === 'home'" class="row justify-content-center">
+      <div class="col-md-8 col-sm-12">
+        <button class="btn btn-secondary mb-3 btn-sm" @click="page = 'login'">กลับ</button>
+        <div class="card p-4">
+          <h5 class="mb-3">รายการรอตรวจสอบ ({{amCode}})</h5>
+          <div v-if="loading" class="text-center"><div class="spinner-border text-primary"></div></div>
+          <ul class="list-group" v-else>
+            <li class="list-group-item d-flex justify-content-between align-items-center" v-for="item in summaryList" :key="item.date">
+              {{ item.date }}
+              <span>
+                <span class="text-red me-3">{{ item.count }} Txn</span>
+                <button class="btn btn-outline-primary btn-sm" @click="startChecking(item.date)">ตรวจสอบ</button>
+              </span>
+            </li>
+            <li class="list-group-item text-center text-muted" v-if="summaryList.length === 0">ไม่มีรายการรอตรวจสอบ</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="page === 'checking'" class="row justify-content-center">
+      <div class="col-md-8 col-sm-12">
+        <div class="card p-4" v-if="transactions.length > 0">
+          <h5 class="text-center mb-3">ตรวจสอบ ({{currentIndex + 1}} / {{transactions.length}})</h5>
+          <p class="text-center text-muted">วันที่: {{ currentTxn.date }} | {{ currentTxn.Ref1 }}</p>
+          <div class="row mb-2">
+            <div class="col-6"><strong>Store:</strong> {{ currentTxn.StoreCode }}</div>
+            <div class="col-6"><strong>Amount:</strong> {{ currentTxn.Amount }} ฿</div>
+          </div>
+          <hr>
+          <div class="mb-3">
+            <label class="form-label">ประเภท</label>
+            <select class="form-select" v-model="checkData.Type">
+              <option value="">-- เลือก --</option>
+              <option value="พนักงาน">พนักงาน</option>
+              <option value="ลูกค้า">ลูกค้า</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">มีเงินสดจริงหรือไม่</label>
+            <select class="form-select" v-model="checkData.Cash_Exist">
+              <option value="">-- เลือก --</option>
+              <option value="มี">มี</option>
+              <option value="ไม่มี">ไม่มี</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">ความผิดปกติ</label>
+            <select class="form-select" v-model="checkData.Is_Abnormal">
+              <option value="">-- เลือก --</option>
+              <option value="ใช่">ใช่ (ผิดปกติ)</option>
+              <option value="ไม่ใช่">ไม่ใช่ (ปกติ)</option>
+            </select>
+          </div>
+          <div class="d-flex justify-content-between mt-4">
+            <button class="btn btn-success w-100" @click="nextTxn" :disabled="!isFormValid || loading">
+               <span v-if="loading" class="spinner-border spinner-border-sm"></span>
+               {{ currentIndex === transactions.length - 1 ? 'เสร็จสิ้นและบันทึก' : 'ถัดไป' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="page === 'report'" class="row justify-content-center">
+      <div class="col-md-8 col-sm-12">
+        <div class="card p-4 text-center">
+          <h4 class="text-success mb-3">บันทึกเรียบร้อย!</h4>
+          <div class="alert alert-info text-start" id="reportText">
+            AM: {{ amCode }}<br>สรุปการตรวจสอบ Cenpay Alert<br>วันที่: {{ checkedDate }}<br>
+            จำนวนรวม = {{ reportSummary.totalTxn }} ครั้ง<br>
+            จำนวนบัญชีปลายทางที่ผิดปกติ = {{ reportSummary.abnormalCount }}<br>
+            บัญชีรับโอนเป็นพนักงานสาขา = {{ reportSummary.employeeCount }}
+          </div>
+          <div class="d-grid gap-2">
+            <button class="btn btn-primary" @click="copyReport">📋 คัดลอกข้อมูล</button>
+            <button class="btn btn-outline-secondary" @click="page = 'home'; loadSummary()">กลับหน้าแรก</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ใส่ลิงก์ Web App จาก Google Apps Script เรียบร้อยแล้ว
+    const API_URL = "https://script.google.com/macros/s/AKfycbyEBdGgAxPi1WM1cRyQcvQsQCARcd35ty-MwrW22ivV-YZCSXmnqQXswSfSLv9987ZRYQ/exec"; 
+
+    new Vue({
+      el: '#app',
+      data: {
+        page: 'login',
+        amCode: 'AM 503', // ตั้งค่าเริ่มต้น
+        loading: false, summaryList: [], transactions: [], currentIndex: 0,
+        checkedResults: [], checkData: { Type: '', Cash_Exist: '', Is_Abnormal: '' },
+        checkedDate: '', reportSummary: { totalTxn: 0, abnormalCount: 0, employeeCount: 0 }
+      },
+      computed: {
+        currentTxn() { return this.transactions[this.currentIndex] || {}; },
+        isFormValid() { return this.checkData.Type !== '' && this.checkData.Cash_Exist !== '' && this.checkData.Is_Abnormal !== ''; }
+      },
+      methods: {
+        async callAPI(payload) {
+          try {
+            const response = await fetch(API_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if(result.status === 'success') return result.data;
+            else throw new Error(result.message);
+          } catch (e) {
+            alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + e.message); return null;
+          }
+        },
+        async loadSummary() {
+          if(!this.amCode) { alert('กรุณากรอกข้อมูล'); return; }
+          this.loading = true; this.page = 'home';
+          this.summaryList = await this.callAPI({ action: 'getSummary', amCode: this.amCode }) || [];
+          this.loading = false;
+        },
+        async startChecking(date) {
+          this.loading = true; this.checkedDate = date;
+          this.transactions = await this.callAPI({ action: 'getTransactions', date: date, amCode: this.amCode }) || [];
+          this.currentIndex = 0; this.checkedResults = []; this.checkData = { Type: '', Cash_Exist: '', Is_Abnormal: '' };
+          this.page = 'checking'; this.loading = false;
+        },
+        async nextTxn() {
+          this.checkedResults.push({ ...this.currentTxn, Type: this.checkData.Type, Cash_Exist: this.checkData.Cash_Exist, Is_Abnormal: this.checkData.Is_Abnormal });
+          if (this.currentIndex < this.transactions.length - 1) {
+            this.currentIndex++; this.checkData = { Type: '', Cash_Exist: '', Is_Abnormal: '' };
+          } else {
+            this.loading = true;
+            await this.callAPI({ action: 'saveResult', results: this.checkedResults, amLogin: this.amCode });
+            this.reportSummary = await this.callAPI({ action: 'getReport', date: this.checkedDate, amLogin: this.amCode });
+            this.page = 'report'; this.loading = false;
+          }
+        },
+        copyReport() {
+          navigator.clipboard.writeText(document.getElementById('reportText').innerText).then(() => alert('คัดลอกแล้ว!'));
+        }
+      }
+    });
+  </script>
+</body>
+</html>

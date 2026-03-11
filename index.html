@@ -11,41 +11,18 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; }
-    
-    /* สไตล์สำหรับหน้าล็อกอินที่สวยงาม */
     .login-wrapper {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #007bff 0%, #00d2ff 100%);
-      padding: 20px;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #007bff 0%, #00d2ff 100%); padding: 20px;
     }
     .login-card {
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-      overflow: hidden;
-      width: 100%;
-      max-width: 400px;
+      background: white; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+      overflow: hidden; width: 100%; max-width: 400px;
     }
-    .login-header {
-      background: #f8f9fa;
-      padding: 30px 20px;
-      text-align: center;
-      border-bottom: 1px solid #eee;
-    }
+    .login-header { background: #f8f9fa; padding: 30px 20px; text-align: center; border-bottom: 1px solid #eee; }
     .login-icon { font-size: 50px; color: #007bff; margin-bottom: 15px; }
-    .btn-login {
-      border-radius: 50px;
-      padding: 12px;
-      font-weight: bold;
-      letter-spacing: 1px;
-      transition: all 0.3s;
-    }
+    .btn-login { border-radius: 50px; padding: 12px; font-weight: bold; letter-spacing: 1px; transition: all 0.3s; }
     .btn-login:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,123,255,0.4); }
-
-    /* สไตล์ทั่วไปของแอป */
     .app-wrapper { padding-top: 15px; }
     .card { border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: none; }
     .text-red { color: #dc3545; font-weight: bold; }
@@ -267,7 +244,7 @@
       el: '#app',
       data: {
         page: 'login',
-        amCode: '', // เอาค่า AM 503 ออกตามที่ระบุ
+        amCode: '', // ช่องล็อกอินเว้นว่างไว้เป็นค่าเริ่มต้น
         loading: false, loadingHistory: false,
         summaryList: [], historyList: [],
         stores: [], currentStoreIndex: 0,
@@ -275,10 +252,8 @@
         reportSummary: { totalTxn: 0, abnormalCount: 0, employeeCount: 0 },
         detailData: [], 
         
-        isAdminLogged: false,
-        adminPass: '',
-        uploadFile: null,
-        uploading: false,
+        isAdminLogged: false, adminPass: '',
+        uploadFile: null, uploading: false,
         lastUploadTime: 'กำลังดึงข้อมูล...'
       },
       computed: {
@@ -305,7 +280,6 @@
           }
         },
 
-        // --- ระบบ Admin (.xlsx Upload) ---
         loginAdmin() {
           if(this.adminPass === 'admin1234') { 
             this.isAdminLogged = true; this.adminPass = '';
@@ -315,43 +289,57 @@
           const res = await this.callAPI({ action: 'getLastUpload' });
           if(res) this.lastUploadTime = res;
         },
-        handleFileUpload(event) {
-          this.uploadFile = event.target.files[0];
-        },
+        handleFileUpload(event) { this.uploadFile = event.target.files[0]; },
+        
+        // --- ฟังก์ชันอัปโหลด Excel (แก้ไขเรื่องขนาด Column ไม่เท่ากันแล้ว) ---
         async uploadExcelData() {
           if(!this.uploadFile) return alert('กรุณาเลือกไฟล์ .xlsx ก่อนครับ');
           this.uploading = true;
           
-          // ใช้ SheetJS อ่านไฟล์ Excel ฝั่ง Client
           const reader = new FileReader();
           reader.onload = async (e) => {
             try {
               const data = new Uint8Array(e.target.result);
               const workbook = XLSX.read(data, {type: 'array', cellDates: true});
-              const firstSheetName = workbook.SheetNames[0]; // อ่าน Sheet แรก
+              const firstSheetName = workbook.SheetNames[0]; 
               const worksheet = workbook.Sheets[firstSheetName];
               
-              // แปลงข้อมูลเป็น Array 2 มิติ (คล้ายกับที่ Apps Script ต้องการ)
-              const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, raw: false, defval: ""});
+              let jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
               
               if(jsonData.length > 0) {
-                const newTime = await this.callAPI({ action: 'uploadExcel', excelData: jsonData });
+                const maxCols = jsonData[0].length; 
+                
+                const normalizedData = jsonData.map(row => {
+                  let newRow = [];
+                  for(let i = 0; i < maxCols; i++) {
+                    let cellVal = row[i] !== undefined ? row[i] : "";
+                    if(cellVal instanceof Date) {
+                      cellVal = cellVal.toLocaleDateString('en-GB');
+                    }
+                    newRow.push(cellVal);
+                  }
+                  return newRow;
+                });
+                
+                const finalData = normalizedData.filter(row => row.join("").trim() !== "");
+                const newTime = await this.callAPI({ action: 'uploadExcel', excelData: finalData });
+                
                 if(newTime && !newTime.includes("Error")) {
                   this.lastUploadTime = newTime;
-                  alert('อัปโหลดไฟล์สำเร็จ ข้อมูลพร้อมใช้งานแล้ว');
-                } else { alert('เกิดข้อผิดพลาด: ' + newTime); }
-              } else { alert("ไม่พบข้อมูลในไฟล์ Excel"); }
-            } catch (err) {
-              alert("เกิดข้อผิดพลาดในการอ่านไฟล์: " + err.message);
-            }
+                  alert('✅ อัปโหลดไฟล์สำเร็จ! ข้อมูลพร้อมตรวจสอบแล้วครับ');
+                  document.querySelector('input[type="file"]').value = ''; 
+                } else { 
+                  alert('❌ เกิดข้อผิดพลาดจากเซิร์ฟเวอร์: ' + newTime); 
+                }
+              } else { alert("⚠️ ไม่พบข้อมูลในไฟล์ Excel ครับ"); }
+            } catch (err) { alert("❌ เกิดข้อผิดพลาดในการแปลงไฟล์: " + err.message); }
             this.uploading = false;
             this.uploadFile = null;
           };
-          // อ่านไฟล์เป็น ArrayBuffer
+          reader.onerror = () => { alert("❌ ไม่สามารถอ่านไฟล์ได้"); this.uploading = false; };
           reader.readAsArrayBuffer(this.uploadFile);
         },
 
-        // --- ฟังก์ชันหลัก ---
         async loadSummary() {
           if(!this.amCode) { alert('กรุณาระบุ AreaCode ก่อนเข้าสู่ระบบ'); return; }
           this.loading = true; this.page = 'home';
@@ -388,10 +376,8 @@
           });
 
           this.stores = Object.values(storeGroups);
-          this.currentStoreIndex = 0; 
-          this.checkedResults = [];
-          this.page = 'checking'; 
-          this.loading = false;
+          this.currentStoreIndex = 0; this.checkedResults = [];
+          this.page = 'checking'; this.loading = false;
         },
         async nextStore() {
           this.currentStore.transactions.forEach(t => {
@@ -407,8 +393,6 @@
             this.prepareReportData(this.checkedDate);
           }
         },
-
-        // --- ประวัติและ Export Excel ---
         async viewHistoryDetail(date) {
           document.getElementById('closeHistoryBtn').click();
           this.loading = true; this.checkedDate = date;
@@ -417,8 +401,7 @@
         async prepareReportData(date) {
           this.reportSummary = await this.callAPI({ action: 'getReport', date: date, amLogin: this.amCode });
           this.detailData = await this.callAPI({ action: 'getHistoryDetail', date: date, amCode: this.amCode }) || [];
-          this.page = 'report'; 
-          this.loading = false;
+          this.page = 'report'; this.loading = false;
           this.fetchHistory(); 
         },
         copyReport() {

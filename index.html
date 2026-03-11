@@ -5,128 +5,189 @@
   <title>Cenpay Alert Checking</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
   <style>
     body { background-color: #f8f9fa; font-family: 'Sarabun', sans-serif; }
-    .card { border-radius: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    .card { border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.08); border: none; }
     .text-red { color: #dc3545; font-weight: bold; }
+    .duplicate-alert { background-color: #fff3cd !important; border: 2px solid #ffc107 !important; }
+    .navbar { box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body>
-  <div id="app" class="container py-4">
-    <div class="text-center mb-4">
-      <h2 class="fw-bold text-primary">Cenpay Alert Tracking</h2>
-    </div>
+  <div id="app">
+    
+    <nav class="navbar navbar-light bg-white mb-4 px-3" v-if="page !== 'login'">
+      <span class="navbar-brand mb-0 h1 text-primary fw-bold">Cenpay Alert</span>
+      <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarHistory">
+        🕒 ประวัติ AM
+      </button>
+    </nav>
 
-    <div v-if="page === 'login'" class="row justify-content-center">
-      <div class="col-md-6 col-sm-12">
-        <div class="card p-4">
-          <h5 class="mb-3 text-center">ลงชื่อเข้าใช้ / ค้นหา</h5>
-          <input type="text" class="form-control mb-3" v-model="amCode" placeholder="รหัสสาขา หรือ AM">
-          <button class="btn btn-primary w-100" @click="loadSummary">เข้าสู่ระบบ</button>
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="sidebarHistory">
+      <div class="offcanvas-header bg-primary text-white">
+        <h5 class="offcanvas-title">ประวัติการตรวจสอบ</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+      </div>
+      <div class="offcanvas-body">
+        <h6 class="text-muted mb-3">รหัส: {{ amCode }}</h6>
+        <div class="text-center mt-3" v-if="loadingHistory">
+          <div class="spinner-border text-primary spinner-border-sm"></div> กำลังโหลด...
         </div>
+        <ul class="list-group" v-else>
+          <li class="list-group-item" v-for="h in historyList" :key="h.date">
+            <div class="d-flex justify-content-between">
+              <strong>📅 {{ h.date }}</strong>
+              <span class="badge bg-success rounded-pill">{{ h.total }} Txn</span>
+            </div>
+            <div class="text-danger small mt-1" v-if="h.abnormal > 0">⚠️ พบผิดปกติ {{ h.abnormal }} รายการ</div>
+          </li>
+          <li class="list-group-item text-center text-muted" v-if="historyList.length === 0">ยังไม่มีประวัติการตรวจสอบ</li>
+        </ul>
       </div>
     </div>
 
-    <div v-if="page === 'home'" class="row justify-content-center">
-      <div class="col-md-8 col-sm-12">
-        <button class="btn btn-secondary mb-3 btn-sm" @click="page = 'login'">กลับ</button>
-        <div class="card p-4">
-          <h5 class="mb-3">รายการรอตรวจสอบ ({{amCode}})</h5>
-          <div v-if="loading" class="text-center"><div class="spinner-border text-primary"></div></div>
-          <ul class="list-group" v-else>
-            <li class="list-group-item d-flex justify-content-between align-items-center" v-for="item in summaryList" :key="item.date">
-              {{ item.date }}
-              <span>
-                <span class="text-red me-3">{{ item.count }} Txn</span>
-                <button class="btn btn-outline-primary btn-sm" @click="startChecking(item.date)">ตรวจสอบ</button>
-              </span>
-            </li>
-            <li class="list-group-item text-center text-muted" v-if="summaryList.length === 0">ไม่มีรายการรอตรวจสอบ</li>
-          </ul>
+    <div class="container pb-5">
+      
+      <div v-if="page === 'login'" class="row justify-content-center mt-5">
+        <div class="col-md-6 col-sm-12 text-center mb-4">
+          <h2 class="fw-bold text-primary">Cenpay Alert Tracking</h2>
+        </div>
+        <div class="col-md-5 col-sm-12">
+          <div class="card p-4">
+            <h5 class="mb-3 text-center">ลงชื่อเข้าใช้ / ค้นหา</h5>
+            <input type="text" class="form-control mb-3" v-model="amCode" placeholder="ระบุ AreaCode">
+            <button class="btn btn-primary w-100 py-2" @click="loadSummary">เข้าสู่ระบบ</button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div v-if="page === 'checking'" class="row justify-content-center">
-      <div class="col-md-8 col-sm-12">
-        <div class="card p-4" v-if="transactions.length > 0">
-          <h5 class="text-center mb-3">ตรวจสอบ ({{currentIndex + 1}} / {{transactions.length}})</h5>
-          <p class="text-center text-muted">วันที่: {{ currentTxn.date }} | {{ currentTxn.Ref1 }}</p>
-          <div class="row mb-2">
-            <div class="col-6"><strong>Store:</strong> {{ currentTxn.StoreCode }}</div>
-            <div class="col-6"><strong>Amount:</strong> {{ currentTxn.Amount }} ฿</div>
-          </div>
-          <hr>
-          <div class="mb-3">
-            <label class="form-label">ประเภท</label>
-            <select class="form-select" v-model="checkData.Type">
-              <option value="">-- เลือก --</option>
-              <option value="พนักงาน">พนักงาน</option>
-              <option value="ลูกค้า">ลูกค้า</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">มีเงินสดจริงหรือไม่</label>
-            <select class="form-select" v-model="checkData.Cash_Exist">
-              <option value="">-- เลือก --</option>
-              <option value="มี">มี</option>
-              <option value="ไม่มี">ไม่มี</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">ความผิดปกติ</label>
-            <select class="form-select" v-model="checkData.Is_Abnormal">
-              <option value="">-- เลือก --</option>
-              <option value="ใช่">ใช่ (ผิดปกติ)</option>
-              <option value="ไม่ใช่">ไม่ใช่ (ปกติ)</option>
-            </select>
-          </div>
-          <div class="d-flex justify-content-between mt-4">
-            <button class="btn btn-success w-100" @click="nextTxn" :disabled="!isFormValid || loading">
-               <span v-if="loading" class="spinner-border spinner-border-sm"></span>
-               {{ currentIndex === transactions.length - 1 ? 'เสร็จสิ้นและบันทึก' : 'ถัดไป' }}
-            </button>
+      <div v-if="page === 'home'" class="row justify-content-center">
+        <div class="col-md-8 col-sm-12">
+          <button class="btn btn-secondary mb-3 btn-sm" @click="page = 'login'">ออกจากระบบ</button>
+          <div class="card p-4">
+            <h5 class="mb-3">รายการรอตรวจสอบ ({{amCode}})</h5>
+            <div v-if="loading" class="text-center py-3"><div class="spinner-border text-primary"></div></div>
+            <ul class="list-group" v-else>
+              <li class="list-group-item d-flex justify-content-between align-items-center" v-for="item in summaryList" :key="item.date">
+                {{ item.date }}
+                <span>
+                  <span class="text-red me-3">{{ item.count }} Txn</span>
+                  <button class="btn btn-outline-primary btn-sm" @click="startChecking(item.date)">ตรวจสอบ</button>
+                </span>
+              </li>
+              <li class="list-group-item text-center text-muted py-4" v-if="summaryList.length === 0">ไม่มีรายการรอตรวจสอบแล้ว</li>
+            </ul>
           </div>
         </div>
       </div>
-    </div>
 
-    <div v-if="page === 'report'" class="row justify-content-center">
-      <div class="col-md-8 col-sm-12">
-        <div class="card p-4 text-center">
-          <h4 class="text-success mb-3">บันทึกเรียบร้อย!</h4>
-          <div class="alert alert-info text-start" id="reportText">
-            AM: {{ amCode }}<br>สรุปการตรวจสอบ Cenpay Alert<br>วันที่: {{ checkedDate }}<br>
-            จำนวนรวม = {{ reportSummary.totalTxn }} ครั้ง<br>
-            จำนวนบัญชีปลายทางที่ผิดปกติ = {{ reportSummary.abnormalCount }}<br>
-            บัญชีรับโอนเป็นพนักงานสาขา = {{ reportSummary.employeeCount }}
-          </div>
-          <div class="d-grid gap-2">
-            <button class="btn btn-primary" @click="copyReport">📋 คัดลอกข้อมูล</button>
-            <button class="btn btn-outline-secondary" @click="page = 'home'; loadSummary()">กลับหน้าแรก</button>
+      <div v-if="page === 'checking'" class="row justify-content-center">
+        <div class="col-md-8 col-sm-12">
+          <div v-if="stores.length > 0">
+            
+            <div class="alert alert-info shadow-sm mb-3">
+              <h5 class="fw-bold text-primary mb-2">🏪 สาขา: {{ currentStore.StoreCode }} - {{ currentStore.StoreNameE }}</h5>
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="badge bg-primary fs-6">ความคืบหน้า: สาขาที่ {{ currentStoreIndex + 1 }} / {{ stores.length }}</span>
+                <span class="badge bg-danger fs-6">สาขานี้มี {{ currentStore.transactions.length }} Txn</span>
+              </div>
+            </div>
+
+            <div class="card p-3 mb-3" v-for="(txn, idx) in currentStore.transactions" :key="idx" :class="{'duplicate-alert': txn.isDuplicate}">
+              <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted small">ลำดับที่ {{ idx + 1 }} | วันที่: {{ txn.date }}</span>
+                <span class="badge bg-warning text-dark border border-warning" v-if="txn.isDuplicate">⚠️ ตรวจพบชื่อบัญชีซ้ำ</span>
+              </div>
+              
+              <div class="mb-3 pb-2 border-bottom">
+                <div><strong>ชื่อบัญชี:</strong> <span :class="{'text-danger fw-bold': txn.isDuplicate}">{{ txn.Ref1 }}</span></div>
+                <div><strong>จำนวนเงิน:</strong> <span class="text-primary fw-bold">{{ txn.Amount }} ฿</span> | <strong>ประเภท:</strong> {{ txn.BillType }}</div>
+              </div>
+              
+              <div class="row g-2">
+                <div class="col-12 col-md-4">
+                  <label class="form-label small mb-1 text-muted">ประเภท</label>
+                  <select class="form-select form-select-sm" v-model="txn.checkData.Type">
+                    <option value="">-- เลือก --</option>
+                    <option value="พนักงาน">พนักงาน</option>
+                    <option value="ลูกค้า">ลูกค้า</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="form-label small mb-1 text-muted">มีเงินสดหรือไม่</label>
+                  <select class="form-select form-select-sm" v-model="txn.checkData.Cash_Exist">
+                    <option value="">-- เลือก --</option>
+                    <option value="มี">มี</option>
+                    <option value="ไม่มี">ไม่มี</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="form-label small mb-1 text-muted">ความผิดปกติ</label>
+                  <select class="form-select form-select-sm" v-model="txn.checkData.Is_Abnormal">
+                    <option value="">-- เลือก --</option>
+                    <option value="ใช่">ใช่ (ผิดปกติ)</option>
+                    <option value="ไม่ใช่">ไม่ใช่ (ปกติ)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+               <button class="btn btn-outline-secondary" @click="page = 'home'">ย้อนกลับ</button>
+               <button class="btn btn-success px-4" @click="nextStore" :disabled="!isStoreValid || loading">
+                 <span v-if="loading" class="spinner-border spinner-border-sm"></span>
+                 {{ currentStoreIndex === stores.length - 1 ? 'เสร็จสิ้นและบันทึก' : 'ตรวจสอบสาขาถัดไป ➔' }}
+               </button>
+            </div>
+            
           </div>
         </div>
       </div>
+
+      <div v-if="page === 'report'" class="row justify-content-center">
+        <div class="col-md-8 col-sm-12">
+          <div class="card p-4 text-center">
+            <h4 class="text-success fw-bold mb-3">บันทึกข้อมูลเรียบร้อย!</h4>
+            <div class="alert alert-success text-start" id="reportText">
+              AM: {{ amCode }}<br>สรุปการตรวจสอบ Cenpay Alert<br>วันที่: {{ checkedDate }}<br>
+              จำนวนรวม = {{ reportSummary.totalTxn }} ครั้ง<br>
+              จำนวนบัญชีปลายทางที่ผิดปกติ = {{ reportSummary.abnormalCount }}<br>
+              บัญชีรับโอนเป็นพนักงานสาขา = {{ reportSummary.employeeCount }}
+            </div>
+            <div class="d-grid gap-2">
+              <button class="btn btn-primary" @click="copyReport">📋 คัดลอกข้อมูลรายงาน</button>
+              <button class="btn btn-outline-secondary" @click="page = 'home'; loadSummary()">กลับหน้าหลัก</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
   <script>
-    // ใส่ลิงก์ Web App จาก Google Apps Script เรียบร้อยแล้ว
     const API_URL = "https://script.google.com/macros/s/AKfycbyEBdGgAxPi1WM1cRyQcvQsQCARcd35ty-MwrW22ivV-YZCSXmnqQXswSfSLv9987ZRYQ/exec"; 
 
     new Vue({
       el: '#app',
       data: {
         page: 'login',
-        amCode: 'AM 503', // ตั้งค่าเริ่มต้น
-        loading: false, summaryList: [], transactions: [], currentIndex: 0,
-        checkedResults: [], checkData: { Type: '', Cash_Exist: '', Is_Abnormal: '' },
-        checkedDate: '', reportSummary: { totalTxn: 0, abnormalCount: 0, employeeCount: 0 }
+        amCode: 'AM 503', // ตั้งค่าเริ่มต้นให้ตรงกับข้อมูลของคุณ
+        loading: false, loadingHistory: false,
+        summaryList: [], historyList: [],
+        stores: [], currentStoreIndex: 0,
+        checkedResults: [], checkedDate: '',
+        reportSummary: { totalTxn: 0, abnormalCount: 0, employeeCount: 0 }
       },
       computed: {
-        currentTxn() { return this.transactions[this.currentIndex] || {}; },
-        isFormValid() { return this.checkData.Type !== '' && this.checkData.Cash_Exist !== '' && this.checkData.Is_Abnormal !== ''; }
+        currentStore() { return this.stores[this.currentStoreIndex] || { transactions: [] }; },
+        isStoreValid() {
+          // เช็คว่ากรอกข้อมูลครบทุกช่องในสาขานี้แล้วหรือยัง
+          if(this.currentStore.transactions.length === 0) return false;
+          return this.currentStore.transactions.every(t => t.checkData.Type !== '' && t.checkData.Cash_Exist !== '' && t.checkData.Is_Abnormal !== '');
+        }
       },
       methods: {
         async callAPI(payload) {
@@ -144,30 +205,82 @@
           }
         },
         async loadSummary() {
-          if(!this.amCode) { alert('กรุณากรอกข้อมูล'); return; }
+          if(!this.amCode) { alert('กรุณาระบุ AreaCode'); return; }
           this.loading = true; this.page = 'home';
+          this.fetchHistory(); // ดึงประวัติมาเตรียมไว้ที่ Sidebar
           this.summaryList = await this.callAPI({ action: 'getSummary', amCode: this.amCode }) || [];
           this.loading = false;
         },
+        async fetchHistory() {
+          this.loadingHistory = true;
+          this.historyList = await this.callAPI({ action: 'getHistory', amCode: this.amCode }) || [];
+          this.loadingHistory = false;
+        },
+        cleanName(fullName) {
+          // ลบคำนำหน้าชื่อออกเพื่อให้เทียบแค่ตัวชื่อจริงๆ
+          if(!fullName) return "";
+          return fullName.replace(/^(นาย|นาง|นางสาว|น\.ส\.|ด\.ช\.|ด\.ญ\.)\s*/, '').trim().split(" ")[0]; 
+        },
         async startChecking(date) {
           this.loading = true; this.checkedDate = date;
-          this.transactions = await this.callAPI({ action: 'getTransactions', date: date, amCode: this.amCode }) || [];
-          this.currentIndex = 0; this.checkedResults = []; this.checkData = { Type: '', Cash_Exist: '', Is_Abnormal: '' };
-          this.page = 'checking'; this.loading = false;
+          const txns = await this.callAPI({ action: 'getTransactions', date: date, amCode: this.amCode }) || [];
+          
+          // 1. ตรวจสอบชื่อบัญชีที่คล้าย/ซ้ำกัน (เทียบเฉพาะชื่อ ไม่เอาคำนำหน้าและนามสกุล)
+          const nameCounts = {};
+          txns.forEach(t => { 
+            let simpleName = this.cleanName(t.Ref1);
+            nameCounts[simpleName] = (nameCounts[simpleName] || 0) + 1; 
+          });
+
+          // 2. จัดกลุ่มข้อมูลแยกตามสาขา (StoreCode)
+          const storeGroups = {};
+          txns.forEach(t => {
+            let simpleName = this.cleanName(t.Ref1);
+            t.isDuplicate = nameCounts[simpleName] > 1; // ตั้งค่าสถานะว่าชื่อซ้ำ
+            t.checkData = { Type: '', Cash_Exist: '', Is_Abnormal: '' };
+            
+            if (!storeGroups[t.StoreCode]) {
+              storeGroups[t.StoreCode] = {
+                StoreCode: t.StoreCode,
+                StoreNameE: t.StoreNameE,
+                transactions: []
+              };
+            }
+            storeGroups[t.StoreCode].transactions.push(t);
+          });
+
+          this.stores = Object.values(storeGroups);
+          this.currentStoreIndex = 0; 
+          this.checkedResults = [];
+          this.page = 'checking'; 
+          this.loading = false;
         },
-        async nextTxn() {
-          this.checkedResults.push({ ...this.currentTxn, Type: this.checkData.Type, Cash_Exist: this.checkData.Cash_Exist, Is_Abnormal: this.checkData.Is_Abnormal });
-          if (this.currentIndex < this.transactions.length - 1) {
-            this.currentIndex++; this.checkData = { Type: '', Cash_Exist: '', Is_Abnormal: '' };
+        async nextStore() {
+          // เก็บข้อมูลที่กรอกของสาขานี้เข้า Array
+          this.currentStore.transactions.forEach(t => {
+            this.checkedResults.push({ 
+              ...t, 
+              Type: t.checkData.Type, 
+              Cash_Exist: t.checkData.Cash_Exist, 
+              Is_Abnormal: t.checkData.Is_Abnormal 
+            });
+          });
+
+          if (this.currentStoreIndex < this.stores.length - 1) {
+            this.currentStoreIndex++; // ไปสาขาถัดไป
+            window.scrollTo({ top: 0, behavior: 'smooth' }); // เลื่อนจอขึ้นบนสุด
           } else {
+            // ทำครบทุกสาขาแล้ว ส่งข้อมูลไปบันทึก
             this.loading = true;
             await this.callAPI({ action: 'saveResult', results: this.checkedResults, amLogin: this.amCode });
             this.reportSummary = await this.callAPI({ action: 'getReport', date: this.checkedDate, amLogin: this.amCode });
-            this.page = 'report'; this.loading = false;
+            this.page = 'report'; 
+            this.loading = false;
+            this.fetchHistory(); // อัปเดตประวัติรอบใหม่
           }
         },
         copyReport() {
-          navigator.clipboard.writeText(document.getElementById('reportText').innerText).then(() => alert('คัดลอกแล้ว!'));
+          navigator.clipboard.writeText(document.getElementById('reportText').innerText).then(() => alert('คัดลอกรายงานเรียบร้อยแล้ว!'));
         }
       }
     });

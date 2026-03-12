@@ -13,7 +13,6 @@
   <style>
     body { font-family: 'Sarabun', sans-serif; background-color: #f8f9fa; color: #333; }
     
-    /* 🌟 สไตล์หน้า Login แบบ Corporate เรียบหรู 🌟 */
     .login-wrapper {
       min-height: 100vh; display: flex; align-items: center; justify-content: center;
       background-color: #e9ecef; padding: 20px;
@@ -25,7 +24,6 @@
     .login-header { padding: 30px 20px 10px; text-align: center; }
     .login-icon { font-size: 40px; color: #0d6efd; margin-bottom: 15px; }
     
-    /* 🌟 สไตล์ปุ่มแบบมาตรฐาน 🌟 */
     .btn { border-radius: 6px; font-weight: 500; transition: all 0.2s ease-in-out; }
     .btn:active { transform: scale(0.98); }
     
@@ -214,25 +212,25 @@
               </div>
 
               <div class="mb-4" style="overflow-x: auto;">
-                <div id="reportCapture" class="bg-white shadow-sm" style="padding: 20px; width: 1050px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                <div id="reportCapture" class="bg-white shadow-sm" style="padding: 20px; width: 1150px; border: 1px solid #e0e0e0; border-radius: 8px;">
                   <table class="report-table">
                     <thead>
                       <tr>
-                        <th style="width: 5%;">ลำดับ</th>
-                        <th style="width: 7%;">รหัส<br>สาขา</th>
-                        <th style="width: 17%;">ชื่อสาขา</th>
-                        <th style="width: 17%;">ชื่อบัญชีปลายทาง</th>
+                        <th style="width: 4%;">ลำดับ</th>
+                        <th style="width: 8%;">วันที่</th> <th style="width: 6%;">รหัส<br>สาขา</th>
+                        <th style="width: 15%;">ชื่อสาขา</th>
+                        <th style="width: 15%;">ชื่อบัญชีปลายทาง</th>
                         <th style="width: 9%;">จำนวน<br>เงิน</th>
-                        <th style="width: 11%;">ประเภท<br>ธนาคาร</th>
-                        <th style="width: 11%;">ประเภท<br>(พนักงาน/ลูกค้า)</th>
-                        <th style="width: 12%;">มีเงินสดจริงหรือไม่<br>(มี/ไม่มี)</th>
-                        <th style="width: 11%;">พบความผิดปกติ<br>(ปกติ/ผิดปกติ)</th>
+                        <th style="width: 10%;">ประเภท<br>ธนาคาร</th>
+                        <th style="width: 10%;">ประเภท<br>(พนักงาน/ลูกค้า)</th>
+                        <th style="width: 11%;">มีเงินสดจริงหรือไม่<br>(มี/ไม่มี)</th>
+                        <th style="width: 12%;">พบความผิดปกติ<br>(ปกติ/ผิดปกติ)</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr v-for="(item, index) in detailData" :key="index">
                         <td class="text-center">{{ index + 1 }}</td>
-                        <td class="text-center">{{ item.StoreCode }}</td>
+                        <td class="text-center">{{ item.date }}</td> <td class="text-center">{{ item.StoreCode }}</td>
                         <td class="text-start">{{ item.StoreNameE }}</td>
                         <td class="text-start">{{ item.Ref1 }}</td>
                         <td class="text-end pe-3">{{ formatAmount(item.Amount) }}</td>
@@ -240,12 +238,12 @@
                         <td class="text-center">{{ item.Type }}</td>
                         <td class="text-center">{{ item.Cash_Exist }}</td>
                         <td class="text-center">
-                          <span v-if="item.Is_Abnormal === 'ใช่'" style="background-color: #dc3545; color: white; padding: 4px 14px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; display: inline-block;">ผิดปกติ</span>
-                          <span v-else class="text-dark">ปกติ</span>
+                          <span v-if="item.Is_Abnormal === 'ใช่'" style="background-color: #dc3545; color: white; padding: 4px 14px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; display: inline-block; width: 80px;">ผิดปกติ</span>
+                          <span v-else style="background-color: #198754; color: white; padding: 4px 14px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; display: inline-block; width: 80px;">ปกติ</span>
                         </td>
                       </tr>
                       <tr v-if="detailData.length === 0">
-                        <td colspan="9" class="text-muted text-center py-4">ไม่พบข้อมูล</td>
+                        <td colspan="10" class="text-muted text-center py-4">ไม่พบข้อมูล</td>
                       </tr>
                     </tbody>
                   </table>
@@ -534,14 +532,12 @@
           this.fetchHistory(); 
         },
 
-        // 🌟 แชร์รูปภาพ + ข้อความพร้อมกัน (สำหรับมือถือ) 🌟
         shareReport() {
           const captureElement = document.getElementById('reportCapture');
           if (!captureElement) return;
           
           this.copyReportMobile(false); 
           
-          // แจ้งเตือนกระชับขึ้น
           alert('ระบบได้คัดลอกข้อความสรุปผลให้แล้วครับ\n\nเมื่อกดเข้าแอป LINE ให้กดค้างที่ช่องพิมพ์ แล้วเลือก "วาง" (Paste) เพื่อส่งข้อความไปพร้อมกับรูปภาพได้เลยครับ');
 
           html2canvas(captureElement, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => {
@@ -575,7 +571,6 @@
           link.click();
         },
 
-        // 🌟 คัดลอกข้อความเฉยๆ 
         copyReportMobile(showAlert = true) {
           const textToCopy = `AM: ${this.amCode}\nสรุปการตรวจสอบ Cenpay Alert\nวันที่: ${this.checkedDate}\nจำนวนรวม = ${this.formatAmount(this.reportSummary.totalTxn)} Txn\nจำนวนบัญชีปลายทางที่ผิดปกติ = ${this.formatAmount(this.reportSummary.abnormalCount)} Txn\nบัญชีรับโอนเป็นพนักงานสาขา = ${this.formatAmount(this.reportSummary.employeeCount)} Txn`;
           
@@ -602,7 +597,6 @@
           document.body.removeChild(textArea);
         },
         
-        // 🌟 ดาวน์โหลด Excel
         downloadExcel() {
           if(!this.detailData || this.detailData.length === 0) return alert('ไม่พบข้อมูลสำหรับดาวน์โหลด');
           

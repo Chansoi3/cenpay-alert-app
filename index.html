@@ -11,38 +11,37 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; color: #333; }
+    body { font-family: 'Sarabun', sans-serif; background-color: #f8f9fa; color: #333; }
     
+    /* 🌟 สไตล์หน้า Login แบบ Corporate เรียบหรู 🌟 */
     .login-wrapper {
       min-height: 100vh; display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg, #0b5ed7 0%, #2a8bf2 100%); padding: 20px;
+      background-color: #e9ecef; padding: 20px;
     }
     .login-card {
-      background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-      overflow: hidden; width: 100%; max-width: 420px;
+      background: white; border-radius: 8px; border: 1px solid #dee2e6;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; width: 100%; max-width: 400px;
     }
-    .login-header { background: #f8f9fa; padding: 30px 20px 20px; text-align: center; border-bottom: 1px solid #eaeaea; }
-    .login-icon { font-size: 45px; color: #0b5ed7; margin-bottom: 10px; }
+    .login-header { padding: 30px 20px 10px; text-align: center; }
+    .login-icon { font-size: 40px; color: #0d6efd; margin-bottom: 15px; }
     
-    .btn-action {
-      border-radius: 8px; font-weight: 600; letter-spacing: 0.5px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s ease;
-    }
-    .btn-action:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+    /* 🌟 สไตล์ปุ่มแบบมาตรฐาน 🌟 */
+    .btn { border-radius: 6px; font-weight: 500; transition: all 0.2s ease-in-out; }
+    .btn:active { transform: scale(0.98); }
     
     .app-wrapper { padding-top: 15px; }
-    .card { border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #eee; }
+    .card { border-radius: 8px; border: 1px solid #e2e5e8; box-shadow: 0 2px 6px rgba(0,0,0,0.02); }
     
-    .duplicate-alert { background-color: #fff8e6 !important; border: 1px solid #ffc107 !important; }
-    .navbar { box-shadow: 0 2px 8px rgba(0,0,0,0.05); background: #fff; }
+    .duplicate-alert { background-color: #fffaf0 !important; border: 1px solid #ffc107 !important; }
+    .navbar { box-shadow: 0 2px 4px rgba(0,0,0,0.04); background: #fff; border-bottom: 1px solid #eaeaea; }
     
-    .form-select-sm, .form-control { border-radius: 6px; border-color: #ddd; }
-    .form-select-sm:focus, .form-control:focus { border-color: #0b5ed7; box-shadow: 0 0 0 0.2rem rgba(11,94,215,0.15); }
+    .form-select-sm, .form-control { border-radius: 6px; border-color: #ced4da; }
+    .form-select-sm:focus, .form-control:focus { border-color: #86b7fe; box-shadow: 0 0 0 0.25rem rgba(13,110,253,0.25); }
     
-    /* 🌟 แต่งตาราง Report ให้สวยงามและสัดส่วนคงที่ 🌟 */
+    /* แต่งตาราง Report ให้สวยงามและสัดส่วนคงที่ */
     .report-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; background-color: #fff; table-layout: fixed; }
     .report-table thead th { 
-      background-color: #d6eaff !important; /* สีฟ้าอ่อนตามรูป */
+      background-color: #d6eaff !important; 
       color: #004085 !important; 
       text-align: center; 
       vertical-align: middle; 
@@ -54,7 +53,7 @@
       vertical-align: middle; 
       border: 1px solid #e9ecef; 
       padding: 10px 8px;
-      word-wrap: break-word; /* ข้อความยาวให้ตัดบรรทัด */
+      word-wrap: break-word; 
     }
     .report-table tbody tr:nth-child(even) { background-color: #f8f9fa; } 
   </style>
@@ -65,22 +64,19 @@
     <div v-if="page === 'login'" class="login-wrapper">
       <div class="login-card animate__animated animate__fadeIn">
         <div class="login-header">
-          <i class="fa-solid fa-shield-halved login-icon"></i>
-          <h4 class="fw-bold text-primary mb-0">Cenpay Alert</h4>
-          <p class="text-muted small mt-1">ระบบตรวจสอบรายการผิดปกติ</p>
+          <i class="fa-solid fa-shield-check login-icon"></i>
+          <h4 class="fw-bold text-dark mb-1">Cenpay Alert</h4>
+          <p class="text-muted small">ระบบตรวจสอบรายการผิดปกติ</p>
         </div>
-        <div class="p-4">
-          <label class="form-label text-muted small fw-bold">รหัส AreaCode ของคุณ</label>
-          <div class="input-group mb-4 shadow-sm" style="border-radius: 8px; overflow: hidden;">
-            <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-user text-muted"></i></span>
-            <input type="text" class="form-control form-control-lg fs-6 border-start-0 ps-0" v-model="amCode" placeholder="เช่น AM 503" @keyup.enter="loadSummary">
-          </div>
-          <button class="btn btn-primary btn-action w-100 py-2" @click="loadSummary">
-            เข้าสู่ระบบ <i class="fa-solid fa-arrow-right ms-2"></i>
+        <div class="p-4 pt-2">
+          <label class="form-label text-secondary small fw-bold mb-1">AreaCode ผู้ตรวจสอบ</label>
+          <input type="text" class="form-control form-control-lg fs-6 mb-4 bg-light" v-model="amCode" placeholder="ระบุ AreaCode เช่น AM 503" @keyup.enter="loadSummary">
+          <button class="btn btn-primary w-100 py-2" @click="loadSummary">
+            เข้าสู่ระบบ
           </button>
           <div class="text-center mt-4">
             <a href="#" class="text-muted small text-decoration-none" data-bs-toggle="offcanvas" data-bs-target="#sidebarAdmin">
-              <i class="fa-solid fa-gear"></i> โหมดผู้ดูแลระบบ
+              <i class="fa-solid fa-gear me-1"></i> โหมดผู้ดูแลระบบ
             </a>
           </div>
         </div>
@@ -89,12 +85,12 @@
 
     <div v-else class="app-wrapper">
       <nav class="navbar mb-4 px-3 d-flex justify-content-between sticky-top">
-        <button class="btn btn-light btn-sm btn-action px-3 border" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarAdmin">
-          <i class="fa-solid fa-gear text-dark"></i> Admin
+        <button class="btn btn-outline-secondary btn-sm px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarAdmin">
+          <i class="fa-solid fa-gear text-dark me-1"></i> Admin
         </button>
-        <span class="navbar-brand mb-0 h5 text-primary fw-bold mx-auto"><i class="fa-solid fa-shield-halved me-1"></i> Cenpay Alert</span>
-        <button class="btn btn-primary btn-sm btn-action px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarHistory">
-          <i class="fa-solid fa-clock-rotate-left"></i> ประวัติ
+        <span class="navbar-brand mb-0 h6 text-primary fw-bold mx-auto"><i class="fa-solid fa-shield-check me-1"></i> Cenpay Alert</span>
+        <button class="btn btn-primary btn-sm px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarHistory">
+          <i class="fa-solid fa-clock-rotate-left me-1"></i> ประวัติ
         </button>
       </nav>
 
@@ -102,19 +98,19 @@
         
         <div v-if="page === 'home'" class="row justify-content-center">
           <div class="col-md-8 col-sm-12">
-            <div class="d-flex justify-content-between mb-3">
-              <h5 class="fw-bold text-dark"><i class="fa-solid fa-list-check text-primary me-2"></i>รายการรอตรวจสอบ ({{amCode}})</h5>
-              <button class="btn btn-outline-danger btn-sm btn-action" @click="page = 'login'">ออกจากระบบ</button>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-list-check text-primary me-2"></i>รายการรอตรวจสอบ ({{amCode}})</h5>
+              <button class="btn btn-outline-danger btn-sm" @click="page = 'login'">ออกจากระบบ</button>
             </div>
             
-            <div class="card p-0 overflow-hidden">
-              <div v-if="loading" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+            <div class="card p-0 overflow-hidden border-0 shadow-sm">
+              <div v-if="loading" class="text-center py-5"><div class="spinner-border text-primary border-2"></div></div>
               <ul class="list-group list-group-flush" v-else>
                 <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3" v-for="item in summaryList" :key="item.date">
-                  <span class="fw-bold fs-6"><i class="fa-regular fa-calendar-days text-muted me-2"></i>{{ item.date }}</span>
+                  <span class="fw-bold fs-6 text-dark"><i class="fa-regular fa-calendar text-secondary me-2"></i>{{ item.date }}</span>
                   <span>
-                    <span class="badge bg-danger rounded-pill me-3 fs-6 px-3">{{ item.count }} Txn</span>
-                    <button class="btn btn-primary btn-sm btn-action px-4" @click="startChecking(item.date)">ตรวจสอบ</button>
+                    <span class="badge bg-danger rounded-pill me-3 fs-6 px-3 fw-normal">{{ item.count }} Txn</span>
+                    <button class="btn btn-primary btn-sm px-4" @click="startChecking(item.date)">ตรวจสอบ</button>
                   </span>
                 </li>
                 <li class="list-group-item text-center text-muted py-5 bg-light" v-if="summaryList.length === 0">
@@ -130,38 +126,38 @@
           <div class="col-md-8 col-sm-12">
             <div v-if="stores.length > 0">
               
-              <div class="alert alert-primary shadow-sm mb-3 border-0" style="border-radius: 12px;">
+              <div class="alert alert-primary shadow-sm mb-3 border-0" style="border-radius: 8px;">
                 <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-primary border-opacity-25">
-                  <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-store me-2"></i>{{ currentStore.StoreCode }} - {{ currentStore.StoreNameE }}</h5>
-                  <span class="badge bg-white text-primary border border-primary">สาขาที่ {{ currentStoreIndex + 1 }} / {{ stores.length }}</span>
+                  <h6 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-store me-2"></i>{{ currentStore.StoreCode }} - {{ currentStore.StoreNameE }}</h6>
+                  <span class="badge bg-white text-primary border border-primary fw-normal">สาขาที่ {{ currentStoreIndex + 1 }} / {{ stores.length }}</span>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-2">
-                  <span class="text-dark fw-bold small"><i class="fa-regular fa-calendar-check text-primary me-1"></i> วันที่ตรวจสอบ: {{ checkedDate }}</span>
-                  <span class="badge bg-danger fs-6 px-3 py-1 rounded-pill shadow-sm">{{ currentStore.transactions.length }} Txn</span>
+                  <span class="text-dark fw-bold small"><i class="fa-regular fa-calendar me-1"></i> วันที่: {{ checkedDate }}</span>
+                  <span class="badge bg-danger fs-6 px-3 py-1 rounded-pill fw-normal">{{ currentStore.transactions.length }} Txn</span>
                 </div>
               </div>
 
               <div class="card p-3 mb-3 border-0 shadow-sm" v-for="(txn, idx) in currentStore.transactions" :key="idx" :class="{'duplicate-alert': txn.isDuplicate}">
                 <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
-                  <span class="text-muted small fw-bold">รายการที่ {{ idx + 1 }}</span>
-                  <span class="badge bg-warning text-dark border border-warning shadow-sm" v-if="txn.isDuplicate">
-                    <i class="fa-solid fa-triangle-exclamation"></i> บัญชีซ้ำ/ชื่อบัญชีใกล้เคียงกัน
+                  <span class="text-secondary small fw-bold">รายการที่ {{ idx + 1 }}</span>
+                  <span class="badge bg-warning text-dark fw-normal" v-if="txn.isDuplicate">
+                    <i class="fa-solid fa-triangle-exclamation"></i> บัญชีซ้ำ/ชื่อใกล้เคียง
                   </span>
                 </div>
                 <div class="mb-3">
                   <div class="mb-1 text-dark"><strong>ชื่อบัญชี:</strong> <span :class="{'text-danger fw-bold': txn.isDuplicate}">{{ txn.Ref1 }}</span></div>
                   <div>
-                    <strong>ยอดเงิน:</strong> <span class="text-success fw-bold fs-5">{{ formatAmount(txn.Amount) }} ฿</span> 
+                    <strong>ยอดเงิน:</strong> <span class="text-success fw-bold">{{ formatAmount(txn.Amount) }} ฿</span> 
                     <span class="mx-2 text-muted">|</span> 
-                    <strong>Txn:</strong> <span class="text-primary fw-bold">{{ txn.Txn }}</span> 
+                    <strong>Txn:</strong> <span class="text-primary">{{ txn.Txn }}</span> 
                     <span class="mx-2 text-muted">|</span> 
-                    <strong>ธนาคาร:</strong> <span class="badge bg-secondary px-2">{{ txn.BillType }}</span>
+                    <strong>ธนาคาร:</strong> <span class="badge bg-secondary fw-normal">{{ txn.BillType }}</span>
                   </div>
                 </div>
                 
                 <div class="row g-2 bg-light p-2 rounded border">
                   <div class="col-12 col-md-4">
-                    <label class="form-label small mb-1 text-muted fw-bold">ประเภทบัญชี</label>
+                    <label class="form-label small mb-1 text-secondary fw-bold">ประเภทบัญชี</label>
                     <select class="form-select form-select-sm" v-model="txn.checkData.Type">
                       <option value="">-- เลือก --</option>
                       <option value="พนักงาน">พนักงาน</option>
@@ -169,7 +165,7 @@
                     </select>
                   </div>
                   <div class="col-12 col-md-4">
-                    <label class="form-label small mb-1 text-muted fw-bold">มีเงินสดหรือไม่</label>
+                    <label class="form-label small mb-1 text-secondary fw-bold">มีเงินสดหรือไม่</label>
                     <select class="form-select form-select-sm" v-model="txn.checkData.Cash_Exist">
                       <option value="">-- เลือก --</option>
                       <option value="มี">มี</option>
@@ -177,7 +173,7 @@
                     </select>
                   </div>
                   <div class="col-12 col-md-4">
-                    <label class="form-label small mb-1 text-muted fw-bold">พบความผิดปกติ</label>
+                    <label class="form-label small mb-1 text-secondary fw-bold">พบความผิดปกติ</label>
                     <select class="form-select form-select-sm" v-model="txn.checkData.Is_Abnormal">
                       <option value="">-- เลือก --</option>
                       <option value="ใช่">ใช่ (ผิดปกติ)</option>
@@ -188,10 +184,10 @@
               </div>
 
               <div class="d-flex justify-content-between mt-4">
-                 <button class="btn btn-light border btn-action px-4 text-dark" @click="page = 'home'">ย้อนกลับ</button>
-                 <button class="btn btn-success btn-action px-4" @click="nextStore" :disabled="!isStoreValid || loading">
-                   <span v-if="loading" class="spinner-border spinner-border-sm me-1"></span>
-                   {{ currentStoreIndex === stores.length - 1 ? 'เสร็จสิ้นการตรวจสอบ' : 'สาขาถัดไป' }} <i class="fa-solid fa-check ms-1" v-if="currentStoreIndex === stores.length - 1"></i><i class="fa-solid fa-arrow-right ms-1" v-else></i>
+                 <button class="btn btn-outline-secondary px-4 text-dark" @click="page = 'home'">ย้อนกลับ</button>
+                 <button class="btn btn-success px-4" @click="nextStore" :disabled="!isStoreValid || loading">
+                   <span v-if="loading" class="spinner-border spinner-border-sm me-1 border-2"></span>
+                   {{ currentStoreIndex === stores.length - 1 ? 'บันทึกการตรวจสอบ' : 'สาขาถัดไป' }} <i class="fa-solid fa-check ms-1" v-if="currentStoreIndex === stores.length - 1"></i><i class="fa-solid fa-arrow-right ms-1" v-else></i>
                  </button>
               </div>
             </div>
@@ -200,31 +196,25 @@
 
         <div v-if="page === 'report'" class="row justify-content-center">
           <div class="col-12">
-            <div v-if="loading" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+            <div v-if="loading" class="text-center py-5"><div class="spinner-border text-primary border-2"></div></div>
             
             <div v-else>
-              <h4 class="text-success fw-bold text-center mb-4"><i class="fa-solid fa-circle-check me-2"></i>บันทึกข้อมูลเรียบร้อย</h4>
-              
-              <div class="bg-white p-4 rounded shadow-sm border mb-4 text-start mx-auto" style="font-size: 1.05rem; line-height: 1.8; max-width: 600px;">
-                AM: <strong>{{ amCode }}</strong><br>
-                สรุปการตรวจสอบ Cenpay Alert<br>
-                วันที่: <strong>{{ checkedDate }}</strong><br>
-                จำนวนรวม = <strong>{{ formatAmount(reportSummary.totalTxn) }}</strong> Txn<br>
-                จำนวนบัญชีปลายทางที่ผิดปกติ = <strong class="text-danger">{{ formatAmount(reportSummary.abnormalCount) }}</strong> Txn<br>
-                บัญชีรับโอนเป็นพนักงานสาขา = <strong class="text-primary">{{ formatAmount(reportSummary.employeeCount) }}</strong> Txn
-              </div>
+              <h5 class="text-success fw-bold text-center mb-4"><i class="fa-solid fa-circle-check me-2"></i>บันทึกข้อมูลเรียบร้อย</h5>
               
               <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
-                <button class="btn btn-warning btn-action px-4 py-2 text-dark fw-bold shadow-sm" @click="shareReport">
-                  <i class="fa-solid fa-share-nodes me-2"></i>แชร์เข้า LINE
+                <button class="btn btn-primary px-4 py-2" @click="shareReport">
+                  <i class="fa-solid fa-share-nodes me-2"></i>แชร์รูปภาพ
                 </button>
-                <button class="btn btn-success btn-action px-4 py-2 shadow-sm" @click="downloadExcel">
+                <button class="btn btn-outline-primary px-4 py-2 bg-white" @click="copyReportMobile">
+                  <i class="fa-solid fa-copy me-2"></i>คัดลอกข้อความ
+                </button>
+                <button class="btn btn-success px-4 py-2" @click="downloadExcel">
                   <i class="fa-solid fa-file-excel me-2"></i>ดาวน์โหลด Excel
                 </button>
               </div>
 
               <div class="mb-4" style="overflow-x: auto;">
-                <div id="reportCapture" class="bg-white" style="padding: 20px; width: 1050px;">
+                <div id="reportCapture" class="bg-white shadow-sm" style="padding: 20px; width: 1050px; border: 1px solid #e0e0e0; border-radius: 8px;">
                   <table class="report-table">
                     <thead>
                       <tr>
@@ -250,7 +240,7 @@
                         <td class="text-center">{{ item.Type }}</td>
                         <td class="text-center">{{ item.Cash_Exist }}</td>
                         <td class="text-center">
-                          <span v-if="item.Is_Abnormal === 'ใช่'" style="background-color: #d63333; color: white; padding: 5px 16px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; display: inline-block;">ผิดปกติ</span>
+                          <span v-if="item.Is_Abnormal === 'ใช่'" style="background-color: #dc3545; color: white; padding: 4px 14px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; display: inline-block;">ผิดปกติ</span>
                           <span v-else class="text-dark">ปกติ</span>
                         </td>
                       </tr>
@@ -263,7 +253,7 @@
               </div>
               
               <div class="text-center pb-4">
-                <button class="btn btn-light border btn-action py-2 px-5 text-dark fw-bold" @click="page = 'home'; loadSummary()">
+                <button class="btn btn-outline-secondary py-2 px-5 text-dark" @click="page = 'home'; loadSummary()">
                   <i class="fa-solid fa-house me-2"></i>กลับหน้าหลัก
                 </button>
               </div>
@@ -276,39 +266,39 @@
 
     <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarAdmin">
       <div class="offcanvas-header bg-dark text-white">
-        <h5 class="offcanvas-title"><i class="fa-solid fa-gear me-2"></i>ผู้ดูแลระบบ</h5>
+        <h6 class="offcanvas-title mb-0"><i class="fa-solid fa-gear me-2"></i>ผู้ดูแลระบบ</h6>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
       </div>
       <div class="offcanvas-body">
         <div v-if="!isAdminLogged">
           <label class="form-label text-muted small fw-bold">รหัสผ่านแอดมิน</label>
-          <input type="password" class="form-control mb-3 shadow-sm" v-model="adminPass">
-          <button class="btn btn-dark btn-action w-100" @click="loginAdmin">เข้าสู่ระบบ</button>
+          <input type="password" class="form-control mb-3 bg-light" v-model="adminPass">
+          <button class="btn btn-dark w-100" @click="loginAdmin">เข้าสู่ระบบ</button>
         </div>
         <div v-else>
-          <div class="alert alert-success small shadow-sm"><i class="fa-solid fa-clock me-2"></i>อัปโหลดล่าสุด: <br><strong>{{ lastUploadTime }}</strong></div>
+          <div class="alert alert-success small border-0"><i class="fa-solid fa-clock me-2"></i>อัปโหลดล่าสุด: <br><strong>{{ lastUploadTime }}</strong></div>
           <hr>
           <h6 class="fw-bold text-primary mb-2"><i class="fa-solid fa-file-excel me-2"></i>อัปโหลดไฟล์ Excel (.xlsx)</h6>
           <p class="small text-muted mb-3">* ระบบจะอ่านข้อมูลเฉพาะจากชีตชื่อ <b>RAW</b></p>
-          <input type="file" class="form-control mb-3 shadow-sm" accept=".xlsx, .xls" @change="handleFileUpload">
-          <button class="btn btn-primary btn-action w-100 mb-4" @click="uploadExcelData" :disabled="uploading">
-            <span v-if="uploading" class="spinner-border spinner-border-sm me-2"></span>
+          <input type="file" class="form-control mb-3" accept=".xlsx, .xls" @change="handleFileUpload">
+          <button class="btn btn-primary w-100 mb-3" @click="uploadExcelData" :disabled="uploading">
+            <span v-if="uploading" class="spinner-border spinner-border-sm me-2 border-2"></span>
             {{ uploading ? 'กำลังดำเนินการ...' : 'อัปโหลดและต่อท้ายข้อมูล' }}
           </button>
-          <button class="btn btn-outline-danger btn-action w-100" @click="isAdminLogged = false">ออกจากโหมดแอดมิน</button>
+          <button class="btn btn-outline-danger w-100" @click="isAdminLogged = false">ออกจากโหมดแอดมิน</button>
         </div>
       </div>
     </div>
 
     <div class="offcanvas offcanvas-end" tabindex="-1" id="sidebarHistory">
       <div class="offcanvas-header bg-primary text-white">
-        <h5 class="offcanvas-title"><i class="fa-solid fa-clock-rotate-left me-2"></i>ประวัติการตรวจสอบ</h5>
+        <h6 class="offcanvas-title mb-0"><i class="fa-solid fa-clock-rotate-left me-2"></i>ประวัติการตรวจสอบ</h6>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" id="closeHistoryBtn"></button>
       </div>
       <div class="offcanvas-body bg-light p-3">
-        <h6 class="text-dark fw-bold mb-3 pb-2 border-bottom"><i class="fa-solid fa-user me-2"></i>AM: {{ amCode }}</h6>
+        <h6 class="text-dark fw-bold mb-3 pb-2 border-bottom"><i class="fa-solid fa-user me-2 text-muted"></i>AM: {{ amCode }}</h6>
         <div class="text-center mt-5" v-if="loadingHistory">
-          <div class="spinner-border text-primary"></div>
+          <div class="spinner-border text-primary border-2"></div>
         </div>
         <div v-else>
           <div v-if="historyList.length === 0" class="text-center text-muted mt-5">
@@ -317,13 +307,13 @@
           <div class="card mb-3 border-0 shadow-sm" v-for="h in historyList" :key="h.date">
             <div class="card-body p-3">
               <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="fw-bold text-primary"><i class="fa-regular fa-calendar me-2"></i>{{ h.date }}</span>
-                <span class="badge bg-success px-2">{{ h.total }} Txn</span>
+                <span class="fw-bold text-dark"><i class="fa-regular fa-calendar me-2 text-primary"></i>{{ h.date }}</span>
+                <span class="badge bg-success px-2 fw-normal">{{ h.total }} Txn</span>
               </div>
               <div class="text-danger small mb-3 fw-bold bg-danger bg-opacity-10 p-1 rounded px-2" v-if="h.abnormal > 0">
                 <i class="fa-solid fa-circle-exclamation me-1"></i>ผิดปกติ {{ h.abnormal }} รายการ
               </div>
-              <button class="btn btn-sm btn-outline-primary btn-action w-100" @click="viewHistoryDetail(h.date)">ดูรายงาน / ดาวน์โหลด Excel</button>
+              <button class="btn btn-sm btn-outline-primary w-100" @click="viewHistoryDetail(h.date)">ดูรายงาน / ดาวน์โหลด Excel</button>
             </div>
           </div>
         </div>
@@ -544,18 +534,16 @@
           this.fetchHistory(); 
         },
 
-        // 🌟 แก้ไข: สำเนาข้อความลงเครื่องก่อน แล้วเด้งแชร์เฉพาะรูปภาพ เพื่อป้องกันภาษาต่างดาว 🌟
+        // 🌟 แชร์รูปภาพ + ข้อความพร้อมกัน (สำหรับมือถือ) 🌟
         shareReport() {
           const captureElement = document.getElementById('reportCapture');
           if (!captureElement) return;
           
-          // 1. คัดลอกข้อความภาษาไทยลง Clipboard รอไว้ก่อนเลย 
           this.copyReportMobile(false); 
           
-          // แจ้งเตือนผู้ใช้งานให้ทราบว่าต้องกดวาง (Paste)
-          alert('ระบบได้คัดลอก "ข้อความสรุปผล" เตรียมไว้ให้คุณแล้ว!\n\nเมื่อหน้าแชร์รูปภาพเด้งขึ้นมาและคุณกดเข้าแอป LINE แล้ว... ให้คุณกดค้างที่ช่องพิมพ์ แล้วเลือก "วาง" (Paste) เพื่อส่งข้อความพร้อมรูปได้เลยครับ');
+          // แจ้งเตือนกระชับขึ้น
+          alert('ระบบได้คัดลอกข้อความสรุปผลให้แล้วครับ\n\nเมื่อกดเข้าแอป LINE ให้กดค้างที่ช่องพิมพ์ แล้วเลือก "วาง" (Paste) เพื่อส่งข้อความไปพร้อมกับรูปภาพได้เลยครับ');
 
-          // 2. สร้างภาพตาราง
           html2canvas(captureElement, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => {
             const fileName = `Cenpay_Table_${this.amCode}_${this.checkedDate.replace(/\//g, '-')}.jpg`;
             
@@ -564,7 +552,6 @@
               const file = new File([blob], fileName, { type: 'image/jpeg' });
 
               if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                // 3. แชร์ **เฉพาะไฟล์รูปภาพ** (ไม่แนบ text แล้วเพื่อป้องกัน URL Encode ทับ)
                 navigator.share({
                   files: [file]
                 }).catch((error) => {
@@ -588,7 +575,7 @@
           link.click();
         },
 
-        // 🌟 ฟังก์ชันคัดลอกข้อความ (ซ่อน TextArea ไว้เพื่อเสถียรภาพ)
+        // 🌟 คัดลอกข้อความเฉยๆ 
         copyReportMobile(showAlert = true) {
           const textToCopy = `AM: ${this.amCode}\nสรุปการตรวจสอบ Cenpay Alert\nวันที่: ${this.checkedDate}\nจำนวนรวม = ${this.formatAmount(this.reportSummary.totalTxn)} Txn\nจำนวนบัญชีปลายทางที่ผิดปกติ = ${this.formatAmount(this.reportSummary.abnormalCount)} Txn\nบัญชีรับโอนเป็นพนักงานสาขา = ${this.formatAmount(this.reportSummary.employeeCount)} Txn`;
           

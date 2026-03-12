@@ -39,23 +39,24 @@
     .form-select-sm, .form-control { border-radius: 6px; border-color: #ddd; }
     .form-select-sm:focus, .form-control:focus { border-color: #0b5ed7; box-shadow: 0 0 0 0.2rem rgba(11,94,215,0.15); }
     
-    /* 🌟 แต่งตาราง Report ให้เหมือนรูปแบบที่คุณต้องการเป๊ะๆ 🌟 */
-    .report-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; background-color: #fff; }
+    /* 🌟 แต่งตาราง Report ให้สวยงามและสัดส่วนคงที่ 🌟 */
+    .report-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; background-color: #fff; table-layout: fixed; }
     .report-table thead th { 
-      background-color: #cce5ff !important; /* สีฟ้าอ่อนตามรูป */
+      background-color: #d6eaff !important; /* สีฟ้าอ่อนตามรูป */
       color: #004085 !important; 
       text-align: center; 
       vertical-align: middle; 
-      border: 1px solid #b8daff;
+      border: 1px solid #c2dbfe;
       font-weight: bold;
-      padding: 12px 8px;
+      padding: 12px 6px;
     }
     .report-table tbody td { 
       vertical-align: middle; 
       border: 1px solid #e9ecef; 
       padding: 10px 8px;
+      word-wrap: break-word; /* ข้อความยาวให้ตัดบรรทัด */
     }
-    .report-table tbody tr:nth-child(even) { background-color: #f8f9fa; } /* สลับสีบรรทัด */
+    .report-table tbody tr:nth-child(even) { background-color: #f8f9fa; } 
   </style>
 </head>
 <body>
@@ -198,13 +199,13 @@
         </div>
 
         <div v-if="page === 'report'" class="row justify-content-center">
-          <div class="col-12 col-lg-10">
+          <div class="col-12">
             <div v-if="loading" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
             
             <div v-else>
               <h4 class="text-success fw-bold text-center mb-4"><i class="fa-solid fa-circle-check me-2"></i>บันทึกข้อมูลเรียบร้อย</h4>
               
-              <div class="bg-white p-4 rounded shadow-sm border mb-4 text-start" style="font-size: 1.05rem; line-height: 1.8;">
+              <div class="bg-white p-4 rounded shadow-sm border mb-4 text-start mx-auto" style="font-size: 1.05rem; line-height: 1.8; max-width: 600px;">
                 AM: <strong>{{ amCode }}</strong><br>
                 สรุปการตรวจสอบ Cenpay Alert<br>
                 วันที่: <strong>{{ checkedDate }}</strong><br>
@@ -215,10 +216,7 @@
               
               <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
                 <button class="btn btn-warning btn-action px-4 py-2 text-dark fw-bold shadow-sm" @click="shareReport">
-                  <i class="fa-solid fa-share-nodes me-2"></i>แชร์เข้า LINE (รูป+ข้อความ)
-                </button>
-                <button class="btn btn-primary btn-action px-4 py-2 shadow-sm" @click="copyReportMobile">
-                  <i class="fa-solid fa-copy me-2"></i>คัดลอกข้อความ
+                  <i class="fa-solid fa-share-nodes me-2"></i>แชร์เข้า LINE
                 </button>
                 <button class="btn btn-success btn-action px-4 py-2 shadow-sm" @click="downloadExcel">
                   <i class="fa-solid fa-file-excel me-2"></i>ดาวน์โหลด Excel
@@ -226,19 +224,19 @@
               </div>
 
               <div class="mb-4" style="overflow-x: auto;">
-                <div id="reportCapture" class="bg-white" style="padding: 10px; min-width: 900px;">
+                <div id="reportCapture" class="bg-white" style="padding: 20px; width: 1050px;">
                   <table class="report-table">
                     <thead>
                       <tr>
-                        <th>ลำดับ</th>
-                        <th>รหัส<br>สาขา</th>
-                        <th>ชื่อสาขา</th>
-                        <th>ชื่อบัญชีปลายทาง</th>
-                        <th>จำนวน<br>เงิน</th>
-                        <th>ประเภท<br>ธนาคาร</th>
-                        <th>ประเภท(พนักงาน/<br>ลูกค้า)</th>
-                        <th>มีเงินสดจริงหรือไม่<br>(มี/ไม่มี)</th>
-                        <th>พบความผิดปกติ<br>(ปกติ/ผิดปกติ)</th>
+                        <th style="width: 5%;">ลำดับ</th>
+                        <th style="width: 7%;">รหัส<br>สาขา</th>
+                        <th style="width: 17%;">ชื่อสาขา</th>
+                        <th style="width: 17%;">ชื่อบัญชีปลายทาง</th>
+                        <th style="width: 9%;">จำนวน<br>เงิน</th>
+                        <th style="width: 11%;">ประเภท<br>ธนาคาร</th>
+                        <th style="width: 11%;">ประเภท<br>(พนักงาน/ลูกค้า)</th>
+                        <th style="width: 12%;">มีเงินสดจริงหรือไม่<br>(มี/ไม่มี)</th>
+                        <th style="width: 11%;">พบความผิดปกติ<br>(ปกติ/ผิดปกติ)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -247,7 +245,7 @@
                         <td class="text-center">{{ item.StoreCode }}</td>
                         <td class="text-start">{{ item.StoreNameE }}</td>
                         <td class="text-start">{{ item.Ref1 }}</td>
-                        <td class="text-center">{{ formatAmount(item.Amount) }}</td>
+                        <td class="text-end pe-3">{{ formatAmount(item.Amount) }}</td>
                         <td class="text-center">{{ item.BillType }}</td>
                         <td class="text-center">{{ item.Type }}</td>
                         <td class="text-center">{{ item.Cash_Exist }}</td>
@@ -264,9 +262,11 @@
                 </div>
               </div>
               
-              <button class="btn btn-light border btn-action w-100 py-2 text-dark fw-bold" @click="page = 'home'; loadSummary()">
-                <i class="fa-solid fa-house me-2"></i>กลับหน้าหลัก
-              </button>
+              <div class="text-center pb-4">
+                <button class="btn btn-light border btn-action py-2 px-5 text-dark fw-bold" @click="page = 'home'; loadSummary()">
+                  <i class="fa-solid fa-house me-2"></i>กลับหน้าหลัก
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -544,14 +544,18 @@
           this.fetchHistory(); 
         },
 
-        // 🌟 แชร์รูปภาพ + ข้อความพร้อมกัน (สำหรับ iPhone/Android) 🌟
+        // 🌟 แก้ไข: สำเนาข้อความลงเครื่องก่อน แล้วเด้งแชร์เฉพาะรูปภาพ เพื่อป้องกันภาษาต่างดาว 🌟
         shareReport() {
           const captureElement = document.getElementById('reportCapture');
           if (!captureElement) return;
           
-          // ข้อความที่จะส่งไปพร้อมกับรูปภาพ
-          const shareText = `AM: ${this.amCode}\nสรุปการตรวจสอบ Cenpay Alert\nวันที่: ${this.checkedDate}\nจำนวนรวม = ${this.formatAmount(this.reportSummary.totalTxn)} Txn\nจำนวนบัญชีปลายทางที่ผิดปกติ = ${this.formatAmount(this.reportSummary.abnormalCount)} Txn\nบัญชีรับโอนเป็นพนักงานสาขา = ${this.formatAmount(this.reportSummary.employeeCount)} Txn`;
+          // 1. คัดลอกข้อความภาษาไทยลง Clipboard รอไว้ก่อนเลย 
+          this.copyReportMobile(false); 
           
+          // แจ้งเตือนผู้ใช้งานให้ทราบว่าต้องกดวาง (Paste)
+          alert('ระบบได้คัดลอก "ข้อความสรุปผล" เตรียมไว้ให้คุณแล้ว!\n\nเมื่อหน้าแชร์รูปภาพเด้งขึ้นมาและคุณกดเข้าแอป LINE แล้ว... ให้คุณกดค้างที่ช่องพิมพ์ แล้วเลือก "วาง" (Paste) เพื่อส่งข้อความพร้อมรูปได้เลยครับ');
+
+          // 2. สร้างภาพตาราง
           html2canvas(captureElement, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => {
             const fileName = `Cenpay_Table_${this.amCode}_${this.checkedDate.replace(/\//g, '-')}.jpg`;
             
@@ -559,22 +563,15 @@
               if (!blob) return;
               const file = new File([blob], fileName, { type: 'image/jpeg' });
 
-              // ตรวจสอบว่าระบบมือถือรองรับการแชร์รูปภาพ+ข้อความหรือไม่
               if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                // 3. แชร์ **เฉพาะไฟล์รูปภาพ** (ไม่แนบ text แล้วเพื่อป้องกัน URL Encode ทับ)
                 navigator.share({
-                  files: [file],
-                  title: 'สรุปผล Cenpay Alert',
-                  text: shareText // ยัดข้อความเข้าไปตรงนี้
-                }).then(() => {
-                  console.log('แชร์สำเร็จ');
+                  files: [file]
                 }).catch((error) => {
-                  console.log('ยกเลิกการแชร์ หรือแชร์ไม่สำเร็จ', error);
+                  console.log('ยกเลิกการแชร์', error);
                   this.fallbackDownload(canvas, fileName);
                 });
               } else {
-                // ถ้ารองรับแค่โหลดรูป (เช่น ในคอมพิวเตอร์) ให้คัดลอกข้อความไว้ใน Clipboard แล้วโหลดรูป
-                this.copyReportMobile(false); 
-                alert('ระบบจะดาวน์โหลดรูปภาพ และคัดลอกข้อความสรุปผลไว้ให้คุณแล้ว สามารถนำไปวางได้เลยครับ');
                 this.fallbackDownload(canvas, fileName);
               }
             }, 'image/jpeg', 1.0);
@@ -584,7 +581,6 @@
           });
         },
 
-        // ฟังก์ชันดาวน์โหลดสำรองสำหรับคอมพิวเตอร์
         fallbackDownload(canvas, fileName) {
           const link = document.createElement('a');
           link.download = fileName;
@@ -592,7 +588,7 @@
           link.click();
         },
 
-        // 🌟 คัดลอกข้อความเฉยๆ 
+        // 🌟 ฟังก์ชันคัดลอกข้อความ (ซ่อน TextArea ไว้เพื่อเสถียรภาพ)
         copyReportMobile(showAlert = true) {
           const textToCopy = `AM: ${this.amCode}\nสรุปการตรวจสอบ Cenpay Alert\nวันที่: ${this.checkedDate}\nจำนวนรวม = ${this.formatAmount(this.reportSummary.totalTxn)} Txn\nจำนวนบัญชีปลายทางที่ผิดปกติ = ${this.formatAmount(this.reportSummary.abnormalCount)} Txn\nบัญชีรับโอนเป็นพนักงานสาขา = ${this.formatAmount(this.reportSummary.employeeCount)} Txn`;
           
@@ -614,14 +610,12 @@
               navigator.clipboard.writeText(textToCopy).then(() => {
                 if(showAlert) alert('คัดลอกข้อความสำเร็จแล้ว นำไปวางได้เลยครับ!');
               });
-            } else {
-              if(showAlert) alert('ไม่สามารถคัดลอกได้อัตโนมัติ');
             }
           }
           document.body.removeChild(textArea);
         },
         
-        // 🌟 ดาวน์โหลด Excel ให้ฟอร์แมตตรงตามตัวอย่าง
+        // 🌟 ดาวน์โหลด Excel
         downloadExcel() {
           if(!this.detailData || this.detailData.length === 0) return alert('ไม่พบข้อมูลสำหรับดาวน์โหลด');
           

@@ -42,11 +42,11 @@
     /* 🌟 แต่งตาราง Report ให้เหมือนรูปแบบที่คุณต้องการเป๊ะๆ 🌟 */
     .report-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; background-color: #fff; }
     .report-table thead th { 
-      background-color: #d6eaff !important; /* สีฟ้าอ่อนตามรูป */
-      color: #003366 !important; 
+      background-color: #cce5ff !important; /* สีฟ้าอ่อนตามรูป */
+      color: #004085 !important; 
       text-align: center; 
       vertical-align: middle; 
-      border: 1px solid #c2dbfe;
+      border: 1px solid #b8daff;
       font-weight: bold;
       padding: 12px 8px;
     }
@@ -204,17 +204,18 @@
             <div v-else>
               <h4 class="text-success fw-bold text-center mb-4"><i class="fa-solid fa-circle-check me-2"></i>บันทึกข้อมูลเรียบร้อย</h4>
               
-              <div class="bg-white p-3 rounded shadow-sm border mb-4 text-center">
-                <span class="badge bg-primary px-3 py-2 me-2">AM: {{ amCode }}</span>
-                <span class="badge bg-secondary px-3 py-2 me-2">วันที่: {{ checkedDate }}</span>
-                <span class="badge bg-info text-dark px-3 py-2 me-2">รวม {{ formatAmount(reportSummary.totalTxn) }} Txn</span>
-                <span class="badge bg-danger px-3 py-2 me-2">ผิดปกติ {{ formatAmount(reportSummary.abnormalCount) }} Txn</span>
-                <span class="badge bg-success px-3 py-2">พนักงาน {{ formatAmount(reportSummary.employeeCount) }} Txn</span>
+              <div class="bg-white p-4 rounded shadow-sm border mb-4 text-start" style="font-size: 1.05rem; line-height: 1.8;">
+                AM: <strong>{{ amCode }}</strong><br>
+                สรุปการตรวจสอบ Cenpay Alert<br>
+                วันที่: <strong>{{ checkedDate }}</strong><br>
+                จำนวนรวม = <strong>{{ formatAmount(reportSummary.totalTxn) }}</strong> Txn<br>
+                จำนวนบัญชีปลายทางที่ผิดปกติ = <strong class="text-danger">{{ formatAmount(reportSummary.abnormalCount) }}</strong> Txn<br>
+                บัญชีรับโอนเป็นพนักงานสาขา = <strong class="text-primary">{{ formatAmount(reportSummary.employeeCount) }}</strong> Txn
               </div>
               
               <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
-                <button class="btn btn-warning btn-action px-4 py-2 text-dark fw-bold shadow-sm" @click="downloadImage">
-                  <i class="fa-solid fa-image me-2"></i>แชร์ / ดาวน์โหลดรูปตาราง (JPG)
+                <button class="btn btn-warning btn-action px-4 py-2 text-dark fw-bold shadow-sm" @click="shareReport">
+                  <i class="fa-solid fa-share-nodes me-2"></i>แชร์เข้า LINE (รูป+ข้อความ)
                 </button>
                 <button class="btn btn-primary btn-action px-4 py-2 shadow-sm" @click="copyReportMobile">
                   <i class="fa-solid fa-copy me-2"></i>คัดลอกข้อความ
@@ -246,12 +247,12 @@
                         <td class="text-center">{{ item.StoreCode }}</td>
                         <td class="text-start">{{ item.StoreNameE }}</td>
                         <td class="text-start">{{ item.Ref1 }}</td>
-                        <td class="text-end">{{ formatAmount(item.Amount) }}</td>
+                        <td class="text-center">{{ formatAmount(item.Amount) }}</td>
                         <td class="text-center">{{ item.BillType }}</td>
                         <td class="text-center">{{ item.Type }}</td>
                         <td class="text-center">{{ item.Cash_Exist }}</td>
                         <td class="text-center">
-                          <span v-if="item.Is_Abnormal === 'ใช่'" style="background-color: #dc3545; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; display: inline-block;">ผิดปกติ</span>
+                          <span v-if="item.Is_Abnormal === 'ใช่'" style="background-color: #d63333; color: white; padding: 5px 16px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; display: inline-block;">ผิดปกติ</span>
                           <span v-else class="text-dark">ปกติ</span>
                         </td>
                       </tr>
@@ -543,10 +544,13 @@
           this.fetchHistory(); 
         },
 
-        // 🌟 แคปหน้าจอภาพตารางและรองรับ iPhone Share 🌟
-        downloadImage() {
+        // 🌟 แชร์รูปภาพ + ข้อความพร้อมกัน (สำหรับ iPhone/Android) 🌟
+        shareReport() {
           const captureElement = document.getElementById('reportCapture');
           if (!captureElement) return;
+          
+          // ข้อความที่จะส่งไปพร้อมกับรูปภาพ
+          const shareText = `AM: ${this.amCode}\nสรุปการตรวจสอบ Cenpay Alert\nวันที่: ${this.checkedDate}\nจำนวนรวม = ${this.formatAmount(this.reportSummary.totalTxn)} Txn\nจำนวนบัญชีปลายทางที่ผิดปกติ = ${this.formatAmount(this.reportSummary.abnormalCount)} Txn\nบัญชีรับโอนเป็นพนักงานสาขา = ${this.formatAmount(this.reportSummary.employeeCount)} Txn`;
           
           html2canvas(captureElement, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => {
             const fileName = `Cenpay_Table_${this.amCode}_${this.checkedDate.replace(/\//g, '-')}.jpg`;
@@ -555,18 +559,22 @@
               if (!blob) return;
               const file = new File([blob], fileName, { type: 'image/jpeg' });
 
+              // ตรวจสอบว่าระบบมือถือรองรับการแชร์รูปภาพ+ข้อความหรือไม่
               if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 navigator.share({
                   files: [file],
-                  title: 'ตาราง Cenpay Alert',
-                  text: `ตารางผลการตรวจสอบ Cenpay Alert ประจำวันที่ ${this.checkedDate}`
+                  title: 'สรุปผล Cenpay Alert',
+                  text: shareText // ยัดข้อความเข้าไปตรงนี้
                 }).then(() => {
-                  console.log('แชร์/บันทึกรูปภาพสำเร็จ');
+                  console.log('แชร์สำเร็จ');
                 }).catch((error) => {
-                  console.log('ยกเลิกการแชร์', error);
+                  console.log('ยกเลิกการแชร์ หรือแชร์ไม่สำเร็จ', error);
                   this.fallbackDownload(canvas, fileName);
                 });
               } else {
+                // ถ้ารองรับแค่โหลดรูป (เช่น ในคอมพิวเตอร์) ให้คัดลอกข้อความไว้ใน Clipboard แล้วโหลดรูป
+                this.copyReportMobile(false); 
+                alert('ระบบจะดาวน์โหลดรูปภาพ และคัดลอกข้อความสรุปผลไว้ให้คุณแล้ว สามารถนำไปวางได้เลยครับ');
                 this.fallbackDownload(canvas, fileName);
               }
             }, 'image/jpeg', 1.0);
@@ -576,6 +584,7 @@
           });
         },
 
+        // ฟังก์ชันดาวน์โหลดสำรองสำหรับคอมพิวเตอร์
         fallbackDownload(canvas, fileName) {
           const link = document.createElement('a');
           link.download = fileName;
@@ -583,8 +592,8 @@
           link.click();
         },
 
-        // 🌟 คัดลอกข้อความ (เสถียรในมือถือ)
-        copyReportMobile() {
+        // 🌟 คัดลอกข้อความเฉยๆ 
+        copyReportMobile(showAlert = true) {
           const textToCopy = `AM: ${this.amCode}\nสรุปการตรวจสอบ Cenpay Alert\nวันที่: ${this.checkedDate}\nจำนวนรวม = ${this.formatAmount(this.reportSummary.totalTxn)} Txn\nจำนวนบัญชีปลายทางที่ผิดปกติ = ${this.formatAmount(this.reportSummary.abnormalCount)} Txn\nบัญชีรับโอนเป็นพนักงานสาขา = ${this.formatAmount(this.reportSummary.employeeCount)} Txn`;
           
           const textArea = document.createElement("textarea");
@@ -599,13 +608,14 @@
           
           try {
             const successful = document.execCommand('copy');
-            if (successful) { alert('คัดลอกข้อความสำเร็จแล้ว นำไปวางได้เลยครับ!'); } 
-            else { throw new Error('execCommand failed'); }
+            if (successful && showAlert) { alert('คัดลอกข้อความสำเร็จแล้ว นำไปวางได้เลยครับ!'); } 
           } catch (err) {
             if (navigator.clipboard) {
-              navigator.clipboard.writeText(textToCopy).then(() => alert('คัดลอกข้อความสำเร็จแล้ว นำไปวางได้เลยครับ!'));
+              navigator.clipboard.writeText(textToCopy).then(() => {
+                if(showAlert) alert('คัดลอกข้อความสำเร็จแล้ว นำไปวางได้เลยครับ!');
+              });
             } else {
-              alert('ไม่สามารถคัดลอกได้อัตโนมัติ');
+              if(showAlert) alert('ไม่สามารถคัดลอกได้อัตโนมัติ');
             }
           }
           document.body.removeChild(textArea);

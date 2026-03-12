@@ -10,7 +10,6 @@
   <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
   <style>
     body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; color: #333; }
     
@@ -189,36 +188,37 @@
             
             <div v-else>
               <div class="d-flex justify-content-center mb-4">
-                <div id="reportCapture" class="bg-white shadow-sm" style="width: 100%; max-width: 450px; border-radius: 16px; padding: 25px; border: 1px solid #e0e0e0;">
+                <div id="reportCapture" class="bg-white shadow-sm" style="width: 100%; max-width: 420px; border-radius: 12px; overflow: hidden; border: 1px solid #e0e0e0;">
                   
-                  <div class="text-center mb-3">
-                    <div style="line-height: 1;">
-                      <span style="color:#d2232a; font-weight:900; font-style:italic; font-size:2.2rem; letter-spacing: -1px;">Tops</span>
-                      <span style="color:#222; font-weight:800; font-style:italic; font-size:2.2rem; letter-spacing: -1px;">daily</span>
-                    </div>
-                    <h5 class="fw-bold text-dark mt-2 mb-0">สรุปผลการตรวจสอบ</h5>
-                    <h6 class="fw-bold" style="color: #d2232a;">Cenpay Alert</h6>
+                  <div style="background-color: #d2232a; padding: 18px 15px; text-align: center;">
+                    <h4 class="mb-0" style="color: white; font-weight: bold; margin: 0; letter-spacing: 0.5px;">Cenpay Alert</h4>
                   </div>
                   
-                  <div class="bg-light p-3" style="border-radius: 12px; border: 1px solid #f0f0f0;">
-                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                      <span class="text-muted small fw-bold"><i class="fa-regular fa-calendar-check me-2"></i>วันที่ตรวจสอบ</span>
+                  <div style="padding: 25px 20px;">
+                    <h5 class="text-center fw-bold text-dark mb-4">สรุปผลการตรวจสอบ</h5>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                      <span class="text-muted fw-bold" style="font-size: 0.95rem;"><i class="fa-regular fa-calendar-check me-2"></i>วันที่ตรวจสอบ</span>
                       <span class="fw-bold text-dark fs-6">{{ checkedDate }}</span>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                      <span class="text-muted small fw-bold"><i class="fa-solid fa-user me-2"></i>รหัสพื้นที่</span>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                      <span class="text-muted fw-bold" style="font-size: 0.95rem;"><i class="fa-solid fa-user me-2"></i>รหัสพื้นที่ (AreaCode)</span>
                       <span class="fw-bold text-dark fs-6">{{ amCode }}</span>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                      <span class="text-muted small fw-bold"><i class="fa-solid fa-list-ol me-2"></i>จำนวนรายการทั้งหมด</span>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                      <span class="text-muted fw-bold" style="font-size: 0.95rem;"><i class="fa-solid fa-list-ol me-2"></i>จำนวนรายการทั้งหมด</span>
                       <span class="fw-bold text-dark fs-6">{{ formatAmount(reportSummary.totalTxn) }} Txn</span>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                      <span class="text-danger small fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i>บัญชีปลายทางผิดปกติ</span>
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                      <span class="text-danger fw-bold" style="font-size: 0.95rem;"><i class="fa-solid fa-triangle-exclamation me-2"></i>บัญชีปลายทางผิดปกติ</span>
                       <span class="fw-bold text-danger fs-6">{{ formatAmount(reportSummary.abnormalCount) }} Txn</span>
                     </div>
+                    
                     <div class="d-flex justify-content-between align-items-center">
-                      <span class="text-primary small fw-bold"><i class="fa-solid fa-user-tie me-2"></i>บัญชีรับโอนเป็นพนักงาน</span>
+                      <span class="text-primary fw-bold" style="font-size: 0.95rem;"><i class="fa-solid fa-user-tie me-2"></i>บัญชีรับโอนเป็นพนักงาน</span>
                       <span class="fw-bold text-primary fs-6">{{ formatAmount(reportSummary.employeeCount) }} Txn</span>
                     </div>
                   </div>
@@ -226,13 +226,13 @@
               </div>
               
               <div class="d-flex flex-wrap justify-content-center gap-2 mb-5">
-                <button class="btn btn-warning btn-action px-3 py-2 text-dark fw-bold" @click="downloadImage">
-                  <i class="fa-solid fa-image me-2"></i>ดาวน์โหลดรูปภาพ
+                <button class="btn btn-warning btn-action px-3 py-2 text-dark fw-bold shadow-sm" @click="downloadImage">
+                  <i class="fa-solid fa-image me-2"></i>ดาวน์โหลดเป็น JPG
                 </button>
-                <button class="btn btn-primary btn-action px-3 py-2" @click="copyReport">
+                <button class="btn btn-primary btn-action px-3 py-2 shadow-sm" @click="copyReportMobile">
                   <i class="fa-solid fa-copy me-2"></i>คัดลอกข้อความ
                 </button>
-                <button class="btn btn-success btn-action px-3 py-2" @click="downloadExcel">
+                <button class="btn btn-success btn-action px-3 py-2 shadow-sm" @click="downloadExcel">
                   <i class="fa-solid fa-file-excel me-2"></i>ดาวน์โหลด Excel
                 </button>
               </div>
@@ -557,36 +557,60 @@
           this.page = 'report'; this.loading = false;
           this.fetchHistory(); 
         },
-        
-        // --- ฟังก์ชันใหม่: แคปหน้าจอสรุปเป็นไฟล์รูปภาพ (PNG) ---
+
+        // 🌟 แคปหน้าจอสรุปเป็นไฟล์รูปภาพ (JPG)
         downloadImage() {
           const captureElement = document.getElementById('reportCapture');
           if (!captureElement) return;
           
-          html2canvas(captureElement, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
+          // ใช้ html2canvas ถ่ายภาพ element ออกมา
+          html2canvas(captureElement, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => {
             const link = document.createElement('a');
-            link.download = `Cenpay_Summary_${this.amCode}_${this.checkedDate.replace(/\//g, '-')}.png`;
-            link.href = canvas.toDataURL('image/png');
+            link.download = `Cenpay_Summary_${this.amCode}_${this.checkedDate.replace(/\//g, '-')}.jpg`;
+            // ดาวน์โหลดเป็น JPG
+            link.href = canvas.toDataURL('image/jpeg', 1.0);
             link.click();
           }).catch(err => {
             alert('เกิดข้อผิดพลาดในการสร้างรูปภาพ: ' + err.message);
           });
         },
-        
-        // ฟังก์ชันคัดลอกข้อความแบบปรับปรุง
-        copyReport() {
-          const text = `AM: ${this.amCode}\nสรุปการตรวจสอบ Cenpay Alert\nวันที่: ${this.checkedDate}\nจำนวนรวม = ${this.formatAmount(this.reportSummary.totalTxn)} Txn\nจำนวนบัญชีปลายทางที่ผิดปกติ = ${this.formatAmount(this.reportSummary.abnormalCount)} Txn\nบัญชีรับโอนเป็นพนักงานสาขา = ${this.formatAmount(this.reportSummary.employeeCount)} Txn`;
-          navigator.clipboard.writeText(text).then(() => alert('คัดลอกข้อความสำเร็จ!'));
+
+        // 🌟 แก้ปัญหาคัดลอกข้อความในมือถือเพี้ยนเป็น %E0%B8... 
+        copyReportMobile() {
+          const textToCopy = `AM: ${this.amCode}\nสรุปการตรวจสอบ Cenpay Alert\nวันที่: ${this.checkedDate}\nจำนวนรวม = ${this.formatAmount(this.reportSummary.totalTxn)} Txn\nจำนวนบัญชีปลายทางที่ผิดปกติ = ${this.formatAmount(this.reportSummary.abnormalCount)} Txn\nบัญชีรับโอนเป็นพนักงานสาขา = ${this.formatAmount(this.reportSummary.employeeCount)} Txn`;
+          
+          // สร้าง textarea ล่องหนเพื่อบังคับ Copy แบบธรรมดา (ไม่เพี้ยนใน LINE)
+          const textArea = document.createElement("textarea");
+          textArea.value = textToCopy;
+          textArea.style.position = "fixed";
+          textArea.style.top = "-9999px";
+          textArea.style.left = "-9999px";
+          
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          
+          try {
+            const successful = document.execCommand('copy');
+            if (successful) { alert('คัดลอกข้อความสำเร็จแล้ว นำไปวางได้เลยครับ!'); } 
+            else { throw new Error('execCommand failed'); }
+          } catch (err) {
+            // Fallback (ถ้าวิธีแรกล้มเหลว)
+            if (navigator.clipboard) {
+              navigator.clipboard.writeText(textToCopy).then(() => alert('คัดลอกข้อความสำเร็จแล้ว นำไปวางได้เลยครับ!'));
+            } else {
+              alert('ไม่สามารถคัดลอกได้อัตโนมัติ กรุณาลองใช้งานผ่านเบราว์เซอร์ Chrome หรือ Safari ครับ');
+            }
+          }
+          document.body.removeChild(textArea);
         },
         
         downloadExcel() {
           if(!this.detailData || this.detailData.length === 0) return alert('ไม่พบข้อมูลสำหรับดาวน์โหลด');
           
           const excelData = [];
-          
           excelData.push([`รายการแจ้งเตือนการโอนเงินผิดปกติ Cenpay Alert ประจำวันที่ ${this.checkedDate}`]);
           excelData.push([]); 
-          
           excelData.push([
             "ลำดับ", "รหัสสาขา", "ชื่อสาขา", "ชื่อบัญชีปลายทาง", 
             "จำนวนเงิน", "ประเภทธนาคาร", "ประเภท(พนักงาน/ลูกค้า)", 
@@ -595,27 +619,19 @@
           
           this.detailData.forEach((row, index) => {
             excelData.push([
-              index + 1,
-              row.StoreCode,
-              row.StoreNameE,
-              row.Ref1,
-              row.Amount,
-              row.BillType,
-              row.Type,
-              row.Cash_Exist,
+              index + 1, row.StoreCode, row.StoreNameE, row.Ref1,
+              row.Amount, row.BillType, row.Type, row.Cash_Exist,
               row.Is_Abnormal === 'ใช่' ? 'ผิดปกติ' : 'ปกติ'
             ]);
           });
           
           excelData.push([]); 
-          
           excelData.push([`AM ${this.amCode}`]);
           excelData.push([`จำนวนรวม ${this.formatAmount(this.reportSummary.totalTxn)} Txn`]);
           excelData.push([`จำนวนบัญชีปลายทางที่ผิดปกติ ${this.formatAmount(this.reportSummary.abnormalCount)} Txn`]);
           excelData.push([`บัญชีรับโอนเป็นพนักงานสาขา ${this.formatAmount(this.reportSummary.employeeCount)} Txn`]);
 
           const ws = XLSX.utils.aoa_to_sheet(excelData);
-          
           if(!ws['!merges']) ws['!merges'] = [];
           ws['!merges'].push({ s: {r:0, c:0}, e: {r:0, c:8} });
 

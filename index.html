@@ -12,6 +12,7 @@
   <style>
     body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; color: #333; }
     
+    /* สไตล์ Login */
     .login-wrapper {
       min-height: 100vh; display: flex; align-items: center; justify-content: center;
       background: linear-gradient(135deg, #0b5ed7 0%, #2a8bf2 100%); padding: 20px;
@@ -23,6 +24,7 @@
     .login-header { background: #f8f9fa; padding: 30px 20px 20px; text-align: center; border-bottom: 1px solid #eaeaea; }
     .login-icon { font-size: 45px; color: #0b5ed7; margin-bottom: 10px; }
     
+    /* สไตล์ปุ่มมืออาชีพ */
     .btn-action {
       border-radius: 8px; font-weight: 600; letter-spacing: 0.5px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s ease;
@@ -125,13 +127,15 @@
                 <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
                   <span class="text-muted small fw-bold">รายการที่ {{ idx + 1 }}</span>
                   <span class="badge bg-warning text-dark border border-warning shadow-sm" v-if="txn.isDuplicate">
-                    <i class="fa-solid fa-triangle-exclamation"></i> บัญชีซ้ำในสาขานี้
+                    <i class="fa-solid fa-triangle-exclamation"></i> บัญชีซ้ำ/ชื่อบัญชีใกล้เคียงกัน
                   </span>
                 </div>
                 <div class="mb-3">
                   <div class="mb-1 text-dark"><strong>ชื่อบัญชี:</strong> <span :class="{'text-danger fw-bold': txn.isDuplicate}">{{ txn.Ref1 }}</span></div>
                   <div>
                     <strong>ยอดเงิน:</strong> <span class="text-success fw-bold fs-5">{{ formatAmount(txn.Amount) }} ฿</span> 
+                    <span class="mx-2 text-muted">|</span> 
+                    <strong>Txn:</strong> <span class="text-primary fw-bold">{{ txn.Txn }}</span> 
                     <span class="mx-2 text-muted">|</span> 
                     <strong>ธนาคาร:</strong> <span class="badge bg-secondary px-2">{{ txn.BillType }}</span>
                   </div>
@@ -262,7 +266,7 @@
   </div>
 
   <script>
-    // ⚠️ ลิงก์ API ของคุณ
+    // ⚠️ อย่าลืมใส่ลิงก์ API ของคุณตรงนี้
     const API_URL = "https://script.google.com/macros/s/AKfycbyEBdGgAxPi1WM1cRyQcvQsQCARcd35ty-MwrW22ivV-YZCSXmnqQXswSfSLv9987ZRYQ/exec"; 
 
     new Vue({
@@ -290,10 +294,42 @@
       },
       mounted() { this.fetchLastUploadTime(); },
       methods: {
+        // จัดฟอร์แมตตัวเลขให้มีลูกน้ำ (,)
         formatAmount(val) {
           if (!val) return '0';
           return Number(val).toLocaleString('th-TH');
         },
+        
+        // ฟังก์ชันคำนวณความคล้ายของชื่อ (String Similarity) ดักจับพิมพ์ผิด/อ่านคล้าย
+        similarity(s1, s2) {
+          let longer = s1; let shorter = s2;
+          if (s1.length < s2.length) { longer = s2; shorter = s1; }
+          let longerLength = longer.length;
+          if (longerLength == 0) return 1.0;
+          return (longerLength - this.editDistance(longer, shorter)) / parseFloat(longerLength);
+        },
+        editDistance(s1, s2) {
+          s1 = s1.toLowerCase(); s2 = s2.toLowerCase();
+          let costs = new Array();
+          for (let i = 0; i <= s1.length; i++) {
+            let lastValue = i;
+            for (let j = 0; j <= s2.length; j++) {
+              if (i == 0) costs[j] = j;
+              else {
+                if (j > 0) {
+                  let newValue = costs[j - 1];
+                  if (s1.charAt(i - 1) != s2.charAt(j - 1))
+                    newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                  costs[j - 1] = lastValue;
+                  lastValue = newValue;
+                }
+              }
+            }
+            if (i > 0) costs[s2.length] = lastValue;
+          }
+          return costs[s2.length];
+        },
+
         async callAPI(payload) {
           try {
             const response = await fetch(API_URL, {
@@ -331,9 +367,7 @@
               const workbook = XLSX.read(data, {type: 'array'});
               
               let targetSheetName = workbook.SheetNames.find(s => s.trim().toUpperCase() === 'RAW');
-              if(!targetSheetName) {
-                targetSheetName = workbook.SheetNames[0];
-              }
+              if(!targetSheetName) targetSheetName = workbook.SheetNames[0];
 
               const worksheet = workbook.Sheets[targetSheetName];
               const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: "", raw: false});
@@ -351,7 +385,6 @@
                 });
                 
                 const cleanData = finalData.filter(row => row.join("") !== "");
-
                 const newTime = await this.callAPI({ action: 'uploadExcelDirect', arrayData: cleanData });
                 
                 if(newTime && !newTime.includes("Error")) {
@@ -382,9 +415,10 @@
           this.historyList = await this.callAPI({ action: 'getHistory', amCode: this.amCode }) || [];
           this.loadingHistory = false;
         },
+        // ตัดคำนำหน้าชื่อออกเพื่อเปรียบเทียบง่ายขึ้น
         cleanName(fullName) {
           if(!fullName) return "";
-          return fullName.replace(/^(นาย|นาง|นางสาว|น\.ส\.|ด\.ช\.|ด\.ญ\.)\s*/, '').trim().split(" ")[0]; 
+          return fullName.replace(/^(นาย|นาง|นางสาว|น\.ส\.|ด\.ช\.|ด\.ญ\.|Mr\.|Mrs\.|Miss|Ms\.)\s*/i, '').trim().split(" ")[0]; 
         },
         async startChecking(date) {
           this.loading = true; this.checkedDate = date;
@@ -392,24 +426,33 @@
           
           const storeGroups = {};
           
+          // 1. จัดกลุ่มข้อมูลตามสาขา
           txns.forEach(t => {
             if (!storeGroups[t.StoreCode]) {
               storeGroups[t.StoreCode] = { StoreCode: t.StoreCode, StoreNameE: t.StoreNameE, transactions: [] };
             }
+            t.cleanNameStr = this.cleanName(t.Ref1);
+            t.isDuplicate = false; 
+            t.checkData = { Type: '', Cash_Exist: '', Is_Abnormal: '' };
             storeGroups[t.StoreCode].transactions.push(t);
           });
 
+          // 2. ตรวจจับชื่อคล้ายกัน (Similarity) ในสาขาเดียวกัน
           Object.values(storeGroups).forEach(store => {
-            const nameCounts = {};
-            store.transactions.forEach(t => { 
-              let simpleName = this.cleanName(t.Ref1);
-              nameCounts[simpleName] = (nameCounts[simpleName] || 0) + 1; 
-            });
-            store.transactions.forEach(t => {
-              let simpleName = this.cleanName(t.Ref1);
-              t.isDuplicate = nameCounts[simpleName] > 1;
-              t.checkData = { Type: '', Cash_Exist: '', Is_Abnormal: '' };
-            });
+            for (let i = 0; i < store.transactions.length; i++) {
+              for (let j = i + 1; j < store.transactions.length; j++) {
+                let n1 = store.transactions[i].cleanNameStr;
+                let n2 = store.transactions[j].cleanNameStr;
+                
+                // หากชื่อเหมือนกันเป๊ะ หรือคล้ายกันมากกว่า 65% จะถือว่าใกล้เคียงกัน
+                if (n1 === n2 || this.similarity(n1, n2) > 0.65) {
+                  store.transactions[i].isDuplicate = true;
+                  store.transactions[j].isDuplicate = true;
+                }
+              }
+            }
+            // 3. เรียงลำดับชื่อ เพื่อให้คนที่ชื่อเหมือน/คล้ายกัน เลื่อนมาอยู่ติดกัน
+            store.transactions.sort((a, b) => a.cleanNameStr.localeCompare(b.cleanNameStr, 'th'));
           });
 
           this.stores = Object.values(storeGroups);

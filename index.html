@@ -105,7 +105,7 @@
               <div v-if="loading" class="text-center py-5"><div class="spinner-border text-primary border-2"></div></div>
               <ul class="list-group list-group-flush" v-else>
                 <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3" v-for="item in summaryList" :key="item.date">
-                  <span class="fw-bold fs-6 text-dark"><i class="fa-regular fa-calendar text-secondary me-2"></i>{{ item.date }}</span>
+                  <span class="fw-bold fs-6 text-dark"><i class="fa-regular fa-calendar text-secondary me-2"></i>{{ formatDateMMDDYY(item.date) }}</span>
                   <span>
                     <span class="badge bg-danger rounded-pill me-3 fs-6 px-3 fw-normal">{{ item.count }} Txn</span>
                     <button class="btn btn-primary btn-sm px-4" @click="startChecking(item.date)">ตรวจสอบ</button>
@@ -130,7 +130,7 @@
                   <span class="badge bg-white text-primary border border-primary fw-normal">สาขาที่ {{ currentStoreIndex + 1 }} / {{ stores.length }}</span>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-2">
-                  <span class="text-dark fw-bold small"><i class="fa-regular fa-calendar me-1"></i> วันที่: {{ checkedDate }}</span>
+                  <span class="text-dark fw-bold small"><i class="fa-regular fa-calendar me-1"></i> วันที่: {{ formatDateMMDDYY(checkedDate) }}</span>
                   <span class="badge bg-danger fs-6 px-3 py-1 rounded-pill fw-normal">{{ currentStore.transactions.length }} Txn</span>
                 </div>
               </div>
@@ -202,7 +202,7 @@
               <div class="bg-white p-4 rounded shadow-sm border mb-4 text-start mx-auto" style="font-size: 1.05rem; line-height: 1.8; max-width: 600px;">
                 AM: <strong>{{ amCode }}</strong><br>
                 สรุปการตรวจสอบ Cenpay Alert<br>
-                วันที่: <strong>{{ formatShortDate(checkedDate) }}</strong><br>
+                วันที่: <strong>{{ formatDateMMDDYY(checkedDate) }}</strong><br>
                 จำนวนรวม = <strong>{{ formatAmount(reportSummary.totalTxn) }}</strong> Txn<br>
                 จำนวนบัญชีปลายทางที่ผิดปกติ = <strong class="text-danger">{{ formatAmount(reportSummary.abnormalCount) }}</strong> Txn<br>
                 บัญชีรับโอนเป็นพนักงานสาขา = <strong class="text-primary">{{ formatAmount(reportSummary.employeeCount) }}</strong> Txn
@@ -226,7 +226,8 @@
                     <thead>
                       <tr>
                         <th style="width: 4%;">ลำดับ</th>
-                        <th style="width: 8%;">วันที่</th> <th style="width: 6%;">รหัส<br>สาขา</th>
+                        <th style="width: 8%;">วันที่</th>
+                        <th style="width: 6%;">รหัส<br>สาขา</th>
                         <th style="width: 15%;">ชื่อสาขา</th>
                         <th style="width: 15%;">ชื่อบัญชีปลายทาง</th>
                         <th style="width: 9%;">จำนวน<br>เงิน</th>
@@ -239,7 +240,7 @@
                     <tbody>
                       <tr v-for="(item, index) in detailData" :key="index">
                         <td class="text-center">{{ index + 1 }}</td>
-                        <td class="text-center">{{ formatShortDate(item.date) }}</td>
+                        <td class="text-center">{{ formatDateMMDDYY(item.date) }}</td>
                         <td class="text-center">{{ item.StoreCode }}</td>
                         <td class="text-start">{{ item.StoreNameE }}</td>
                         <td class="text-start">{{ item.Ref1 }}</td>
@@ -315,7 +316,7 @@
           <div class="card mb-3 border-0 shadow-sm" v-for="h in historyList" :key="h.date">
             <div class="card-body p-3">
               <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="fw-bold text-dark"><i class="fa-regular fa-calendar me-2 text-primary"></i>{{ h.date }}</span>
+                <span class="fw-bold text-dark"><i class="fa-regular fa-calendar me-2 text-primary"></i>{{ formatDateMMDDYY(h.date) }}</span>
                 <span class="badge bg-success px-2 fw-normal">{{ h.total }} Txn</span>
               </div>
               <div class="text-danger small mb-3 fw-bold bg-danger bg-opacity-10 p-1 rounded px-2" v-if="h.abnormal > 0">
@@ -364,17 +365,22 @@
           return Number(val).toLocaleString('th-TH');
         },
         
-        // 🌟 ฟังก์ชันแปลงรูปแบบวันที่จาก DD/MM/YYYY เป็น DD/MM/YY (ตัดปี 2 หลัก) 🌟
-        formatShortDate(val) {
+        // 🌟 ฟังก์ชันแปลงรูปแบบวันที่ให้เป็น mm/dd/yy ตลอดทั้งระบบ 🌟
+        formatDateMMDDYY(val) {
           if (!val) return '';
           let str = val.toString();
+          // แปลงจากข้อมูลต้นทาง (DD/MM/YYYY)
           let parts = str.split('/');
           if (parts.length === 3) {
+            let day = parts[0].padStart(2, '0');
+            let month = parts[1].padStart(2, '0');
             let year = parts[2];
+            // ตัดให้ปีเหลือแค่ 2 หลัก
             if (year.length === 4) {
-              year = year.slice(-2); // ตัดเอาแค่ 2 ตัวท้ายของปี
+              year = year.slice(-2);
             }
-            return `${parts[0]}/${parts[1]}/${year}`;
+            // สลับเป็น mm/dd/yy
+            return `${month}/${day}/${year}`;
           }
           return str;
         },
@@ -597,8 +603,7 @@
         },
 
         copyReportMobile(showAlert = true) {
-          // ใช้ formatShortDate ตรงนี้เพื่อให้ข้อความที่ก็อปมีวันที่แบบ dd/mm/yy
-          const textToCopy = `AM: ${this.amCode}\nสรุปการตรวจสอบ Cenpay Alert\nวันที่: ${this.formatShortDate(this.checkedDate)}\nจำนวนรวม = ${this.formatAmount(this.reportSummary.totalTxn)} Txn\nจำนวนบัญชีปลายทางที่ผิดปกติ = ${this.formatAmount(this.reportSummary.abnormalCount)} Txn\nบัญชีรับโอนเป็นพนักงานสาขา = ${this.formatAmount(this.reportSummary.employeeCount)} Txn`;
+          const textToCopy = `AM: ${this.amCode}\nสรุปการตรวจสอบ Cenpay Alert\nวันที่: ${this.formatDateMMDDYY(this.checkedDate)}\nจำนวนรวม = ${this.formatAmount(this.reportSummary.totalTxn)} Txn\nจำนวนบัญชีปลายทางที่ผิดปกติ = ${this.formatAmount(this.reportSummary.abnormalCount)} Txn\nบัญชีรับโอนเป็นพนักงานสาขา = ${this.formatAmount(this.reportSummary.employeeCount)} Txn`;
           
           const textArea = document.createElement("textarea");
           textArea.value = textToCopy;
@@ -646,7 +651,7 @@
               row.Amount, 
               row.Txn,
               row.BillType,
-              row.date ? this.formatShortDate(row.date) : this.formatShortDate(this.checkedDate),
+              row.date ? this.formatDateMMDDYY(row.date) : this.formatDateMMDDYY(this.checkedDate),
               row.Type,
               cashStatus,
               abnormalStatus

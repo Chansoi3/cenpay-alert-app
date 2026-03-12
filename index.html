@@ -8,7 +8,9 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
   <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <style>
     body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; color: #333; }
     
@@ -38,7 +40,6 @@
     .form-select-sm, .form-control { border-radius: 6px; border-color: #ddd; }
     .form-select-sm:focus, .form-control:focus { border-color: #0b5ed7; box-shadow: 0 0 0 0.2rem rgba(11,94,215,0.15); }
     
-    /* แต่งตาราง Report ให้สวยงาม */
     .report-table th { background-color: #cce5ff; color: #004085; text-align: center; vertical-align: middle; }
     .report-table td { vertical-align: middle; }
   </style>
@@ -184,13 +185,62 @@
 
         <div v-if="page === 'report'" class="row justify-content-center">
           <div class="col-12 col-lg-10">
-            <div class="card p-4 mb-4 border-0 shadow-sm text-center">
-              <div v-if="loading" class="py-5"><div class="spinner-border text-primary"></div></div>
-              <div v-else>
-                <h5 class="fw-bold mb-4 text-dark">รายการแจ้งเตือนการโอนเงินผิดปกติ Cenpay Alert ประจำวันที่ {{ checkedDate }}</h5>
-                
-                <div class="table-responsive mb-4">
-                  <table class="table table-bordered table-hover report-table" style="font-size: 0.9rem; min-width: 800px;">
+            <div v-if="loading" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+            
+            <div v-else>
+              <div class="d-flex justify-content-center mb-4">
+                <div id="reportCapture" class="bg-white shadow-sm" style="width: 100%; max-width: 450px; border-radius: 16px; padding: 25px; border: 1px solid #e0e0e0;">
+                  
+                  <div class="text-center mb-3">
+                    <div style="line-height: 1;">
+                      <span style="color:#d2232a; font-weight:900; font-style:italic; font-size:2.2rem; letter-spacing: -1px;">Tops</span>
+                      <span style="color:#222; font-weight:800; font-style:italic; font-size:2.2rem; letter-spacing: -1px;">daily</span>
+                    </div>
+                    <h5 class="fw-bold text-dark mt-2 mb-0">สรุปผลการตรวจสอบ</h5>
+                    <h6 class="fw-bold" style="color: #d2232a;">Cenpay Alert</h6>
+                  </div>
+                  
+                  <div class="bg-light p-3" style="border-radius: 12px; border: 1px solid #f0f0f0;">
+                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                      <span class="text-muted small fw-bold"><i class="fa-regular fa-calendar-check me-2"></i>วันที่ตรวจสอบ</span>
+                      <span class="fw-bold text-dark fs-6">{{ checkedDate }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                      <span class="text-muted small fw-bold"><i class="fa-solid fa-user me-2"></i>รหัสพื้นที่</span>
+                      <span class="fw-bold text-dark fs-6">{{ amCode }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                      <span class="text-muted small fw-bold"><i class="fa-solid fa-list-ol me-2"></i>จำนวนรายการทั้งหมด</span>
+                      <span class="fw-bold text-dark fs-6">{{ formatAmount(reportSummary.totalTxn) }} Txn</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                      <span class="text-danger small fw-bold"><i class="fa-solid fa-triangle-exclamation me-2"></i>บัญชีปลายทางผิดปกติ</span>
+                      <span class="fw-bold text-danger fs-6">{{ formatAmount(reportSummary.abnormalCount) }} Txn</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                      <span class="text-primary small fw-bold"><i class="fa-solid fa-user-tie me-2"></i>บัญชีรับโอนเป็นพนักงาน</span>
+                      <span class="fw-bold text-primary fs-6">{{ formatAmount(reportSummary.employeeCount) }} Txn</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="d-flex flex-wrap justify-content-center gap-2 mb-5">
+                <button class="btn btn-warning btn-action px-3 py-2 text-dark fw-bold" @click="downloadImage">
+                  <i class="fa-solid fa-image me-2"></i>ดาวน์โหลดรูปภาพ
+                </button>
+                <button class="btn btn-primary btn-action px-3 py-2" @click="copyReport">
+                  <i class="fa-solid fa-copy me-2"></i>คัดลอกข้อความ
+                </button>
+                <button class="btn btn-success btn-action px-3 py-2" @click="downloadExcel">
+                  <i class="fa-solid fa-file-excel me-2"></i>ดาวน์โหลด Excel
+                </button>
+              </div>
+
+              <div class="card p-3 border-0 shadow-sm mb-4">
+                <h6 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-table me-2 text-muted"></i>รายละเอียดการตรวจสอบของวันที่ {{ checkedDate }}</h6>
+                <div class="table-responsive">
+                  <table class="table table-bordered table-hover report-table" style="font-size: 0.85rem; min-width: 800px;">
                     <thead>
                       <tr>
                         <th>ลำดับ</th>
@@ -199,49 +249,37 @@
                         <th>ชื่อบัญชีปลายทาง</th>
                         <th>จำนวนเงิน</th>
                         <th>ประเภทธนาคาร</th>
-                        <th>ประเภท<br>(พนักงาน/ลูกค้า)</th>
-                        <th>มีเงินสดจริงหรือไม่<br>(มี/ไม่มี)</th>
-                        <th>พบความผิดปกติ<br>(ปกติ/ผิดปกติ)</th>
+                        <th>ประเภท(พนักงาน/ลูกค้า)</th>
+                        <th>มีเงินสดจริงหรือไม่(มี/ไม่มี)</th>
+                        <th>พบความผิดปกติ(ปกติ/ผิดปกติ)</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr v-for="(item, index) in detailData" :key="index">
-                        <td>{{ index + 1 }}</td>
-                        <td>{{ item.StoreCode }}</td>
+                        <td class="text-center">{{ index + 1 }}</td>
+                        <td class="text-center">{{ item.StoreCode }}</td>
                         <td class="text-start">{{ item.StoreNameE }}</td>
                         <td class="text-start">{{ item.Ref1 }}</td>
                         <td class="text-end">{{ formatAmount(item.Amount) }}</td>
-                        <td>{{ item.BillType }}</td>
-                        <td>{{ item.Type }}</td>
-                        <td>{{ item.Cash_Exist }}</td>
-                        <td>
-                          <span :class="{'text-danger fw-bold': item.Is_Abnormal === 'ใช่', 'text-success': item.Is_Abnormal === 'ไม่ใช่'}">
+                        <td class="text-center">{{ item.BillType }}</td>
+                        <td class="text-center">{{ item.Type }}</td>
+                        <td class="text-center">{{ item.Cash_Exist }}</td>
+                        <td class="text-center">
+                          <span class="badge" :class="item.Is_Abnormal === 'ใช่' ? 'bg-danger' : 'bg-success'">
                             {{ item.Is_Abnormal === 'ใช่' ? 'ผิดปกติ' : 'ปกติ' }}
                           </span>
                         </td>
                       </tr>
                       <tr v-if="detailData.length === 0">
-                        <td colspan="9" class="text-muted py-4">ไม่พบข้อมูลการตรวจสอบของวันนี้</td>
+                        <td colspan="9" class="text-muted text-center py-4">ไม่พบข้อมูล</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
-
-                <div class="text-start bg-light p-4 rounded border">
-                  <p class="mb-1 text-dark fs-6">AM <strong>{{ amCode }}</strong></p>
-                  <p class="mb-1 text-dark fs-6">จำนวนรวม <strong>{{ formatAmount(reportSummary.totalTxn) }}</strong> Txn</p>
-                  <p class="mb-1 text-dark fs-6">จำนวนบัญชีปลายทางที่ผิดปกติ <strong class="text-danger">{{ formatAmount(reportSummary.abnormalCount) }}</strong> Txn</p>
-                  <p class="mb-0 text-dark fs-6">บัญชีรับโอนเป็นพนักงานสาขา <strong class="text-primary">{{ formatAmount(reportSummary.employeeCount) }}</strong> Txn</p>
-                </div>
               </div>
-            </div>
-            
-            <div class="d-grid gap-3 d-md-flex justify-content-md-center">
-              <button class="btn btn-success btn-action px-5 py-2" @click="downloadExcel" :disabled="loading">
-                <i class="fa-solid fa-file-excel me-2"></i>ดาวน์โหลด Excel
-              </button>
-              <button class="btn btn-secondary btn-action px-5 py-2 text-white" @click="page = 'home'; loadSummary()" :disabled="loading">
-                กลับหน้าหลัก
+              
+              <button class="btn btn-light border btn-action w-100 py-2 text-dark fw-bold" @click="page = 'home'; loadSummary()">
+                <i class="fa-solid fa-house me-2"></i>กลับหน้าหลัก
               </button>
             </div>
           </div>
@@ -519,32 +557,49 @@
           this.page = 'report'; this.loading = false;
           this.fetchHistory(); 
         },
-
-        // --- อัปเดตฟังก์ชันดาวน์โหลด Excel ให้ตรงตามฟอร์มที่ต้องการ ---
+        
+        // --- ฟังก์ชันใหม่: แคปหน้าจอสรุปเป็นไฟล์รูปภาพ (PNG) ---
+        downloadImage() {
+          const captureElement = document.getElementById('reportCapture');
+          if (!captureElement) return;
+          
+          html2canvas(captureElement, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `Cenpay_Summary_${this.amCode}_${this.checkedDate.replace(/\//g, '-')}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+          }).catch(err => {
+            alert('เกิดข้อผิดพลาดในการสร้างรูปภาพ: ' + err.message);
+          });
+        },
+        
+        // ฟังก์ชันคัดลอกข้อความแบบปรับปรุง
+        copyReport() {
+          const text = `AM: ${this.amCode}\nสรุปการตรวจสอบ Cenpay Alert\nวันที่: ${this.checkedDate}\nจำนวนรวม = ${this.formatAmount(this.reportSummary.totalTxn)} Txn\nจำนวนบัญชีปลายทางที่ผิดปกติ = ${this.formatAmount(this.reportSummary.abnormalCount)} Txn\nบัญชีรับโอนเป็นพนักงานสาขา = ${this.formatAmount(this.reportSummary.employeeCount)} Txn`;
+          navigator.clipboard.writeText(text).then(() => alert('คัดลอกข้อความสำเร็จ!'));
+        },
+        
         downloadExcel() {
           if(!this.detailData || this.detailData.length === 0) return alert('ไม่พบข้อมูลสำหรับดาวน์โหลด');
           
           const excelData = [];
           
-          // 1. หัวเรื่องกระดาษ
           excelData.push([`รายการแจ้งเตือนการโอนเงินผิดปกติ Cenpay Alert ประจำวันที่ ${this.checkedDate}`]);
-          excelData.push([]); // แถวว่าง
+          excelData.push([]); 
           
-          // 2. หัวคอลัมน์
           excelData.push([
             "ลำดับ", "รหัสสาขา", "ชื่อสาขา", "ชื่อบัญชีปลายทาง", 
             "จำนวนเงิน", "ประเภทธนาคาร", "ประเภท(พนักงาน/ลูกค้า)", 
             "มีเงินสดจริงหรือไม่(มี/ไม่มี)", "พบความผิดปกติ(ปกติ/ผิดปกติ)"
           ]);
           
-          // 3. ใส่ข้อมูล
           this.detailData.forEach((row, index) => {
             excelData.push([
               index + 1,
               row.StoreCode,
               row.StoreNameE,
               row.Ref1,
-              row.Amount, // ให้ Excel จัดรูปแบบตัวเลขเอง
+              row.Amount,
               row.BillType,
               row.Type,
               row.Cash_Exist,
@@ -552,9 +607,8 @@
             ]);
           });
           
-          excelData.push([]); // แถวว่าง
+          excelData.push([]); 
           
-          // 4. สรุปผลด้านล่างตาราง
           excelData.push([`AM ${this.amCode}`]);
           excelData.push([`จำนวนรวม ${this.formatAmount(this.reportSummary.totalTxn)} Txn`]);
           excelData.push([`จำนวนบัญชีปลายทางที่ผิดปกติ ${this.formatAmount(this.reportSummary.abnormalCount)} Txn`]);
@@ -562,7 +616,6 @@
 
           const ws = XLSX.utils.aoa_to_sheet(excelData);
           
-          // รวมเซลล์ (Merge Cells) สำหรับหัวเรื่องให้พาดไปทั้ง 9 คอลัมน์
           if(!ws['!merges']) ws['!merges'] = [];
           ws['!merges'].push({ s: {r:0, c:0}, e: {r:0, c:8} });
 

@@ -39,8 +39,21 @@
     .form-select-sm, .form-control { border-radius: 6px; border-color: #ddd; }
     .form-select-sm:focus, .form-control:focus { border-color: #0b5ed7; box-shadow: 0 0 0 0.2rem rgba(11,94,215,0.15); }
     
-    .report-table th { background-color: #cce5ff; color: #004085; text-align: center; vertical-align: middle; }
-    .report-table td { vertical-align: middle; }
+    /* แต่งตารางให้เหมือนรูปแบบรูปภาพเป๊ะๆ */
+    .report-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+    .report-table thead th { 
+      background-color: #cce5ff !important; 
+      color: #004085; 
+      text-align: center; 
+      vertical-align: middle; 
+      border: 1px solid #b8daff;
+      font-weight: bold;
+    }
+    .report-table tbody td { 
+      vertical-align: middle; 
+      border: 1px solid #dee2e6; 
+      padding: 10px;
+    }
   </style>
 </head>
 <body>
@@ -183,47 +196,48 @@
         </div>
 
         <div v-if="page === 'report'" class="row justify-content-center">
-          <div class="col-12 col-lg-10">
+          <div class="col-12">
             <div v-if="loading" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
             
             <div v-else>
+              <h4 class="text-success fw-bold text-center mb-4"><i class="fa-solid fa-circle-check me-2"></i>บันทึกข้อมูลเรียบร้อย</h4>
+              
               <div class="d-flex justify-content-center mb-4">
-                <div id="reportCapture" class="bg-white" style="width: 100%; max-width: 450px; border: 1px solid #000;">
-                  
-                  <div style="background-color: #ff0000; padding: 12px; text-align: center; border-bottom: 1px solid #000;">
-                    <h5 class="mb-0" style="color: white; font-weight: bold; margin: 0; font-size: 1.1rem;">Cenpay Alert</h5>
-                  </div>
-                  
-                  <div style="padding: 15px 20px;">
-                    <div class="text-center fw-bold text-dark mb-3" style="font-size: 1.05rem;">
-                      วันที่ {{ checkedDate }}
-                    </div>
-                    
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 0.95rem; border: 1px solid #000; color: #000;">
-                      <tbody>
-                        <tr>
-                          <td style="border: 1px solid #000; padding: 8px; font-weight: bold; width: 65%;">รหัสพื้นที่</td>
-                          <td style="border: 1px solid #000; padding: 8px; text-align: center;">{{ amCode }}</td>
-                        </tr>
-                        <tr>
-                          <td style="border: 1px solid #000; padding: 8px; font-weight: bold;">จำนวนรวม</td>
-                          <td style="border: 1px solid #000; padding: 8px; text-align: center;">{{ formatAmount(reportSummary.totalTxn) }} Txn</td>
-                        </tr>
-                        <tr>
-                          <td style="border: 1px solid #000; padding: 8px; font-weight: bold;">จำนวนบัญชีปลายทางที่ผิดปกติ</td>
-                          <td style="border: 1px solid #000; padding: 8px; text-align: center;">{{ formatAmount(reportSummary.abnormalCount) }} Txn</td>
-                        </tr>
-                        <tr>
-                          <td style="border: 1px solid #000; padding: 8px; font-weight: bold;">บัญชีรับโอนเป็นพนักงานสาขา</td>
-                          <td style="border: 1px solid #000; padding: 8px; text-align: center;">{{ formatAmount(reportSummary.employeeCount) }} Txn</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                    
-                    <div style="color: #ff0000; font-size: 0.85rem; font-weight: bold;">
-                      *รายละเอียดสาขาและชื่อบัญชีตามไฟล์แนบ
-                    </div>
-                  </div>
+                <div id="reportCapture" class="bg-white p-2" style="width: 100%; max-width: 1000px; overflow-x: auto;">
+                  <table class="report-table">
+                    <thead>
+                      <tr>
+                        <th class="py-2">ลำดับ</th>
+                        <th class="py-2">รหัส<br>สาขา</th>
+                        <th class="py-2">ชื่อสาขา</th>
+                        <th class="py-2">ชื่อบัญชีปลายทาง</th>
+                        <th class="py-2">จำนวน<br>เงิน</th>
+                        <th class="py-2">ประเภท<br>ธนาคาร</th>
+                        <th class="py-2">ประเภท(พนักงาน/<br>ลูกค้า)</th>
+                        <th class="py-2">มีเงินสดจริงหรือไม่<br>(มี/ไม่มี)</th>
+                        <th class="py-2">พบความผิดปกติ(ปกติ/<br>ผิดปกติ)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="(item, index) in detailData" :key="index">
+                        <td class="text-center">{{ index + 1 }}</td>
+                        <td class="text-center">{{ item.StoreCode }}</td>
+                        <td class="text-start">{{ item.StoreNameE }}</td>
+                        <td class="text-start">{{ item.Ref1 }}</td>
+                        <td class="text-center">{{ formatAmount(item.Amount) }}</td>
+                        <td class="text-center">{{ item.BillType }}</td>
+                        <td class="text-center">{{ item.Type }}</td>
+                        <td class="text-center">{{ item.Cash_Exist }}</td>
+                        <td class="text-center">
+                          <span v-if="item.Is_Abnormal === 'ใช่'" class="badge bg-danger rounded-pill px-3 py-1" style="font-size: 0.8rem;">ผิดปกติ</span>
+                          <span v-else class="text-success">ปกติ</span>
+                        </td>
+                      </tr>
+                      <tr v-if="detailData.length === 0">
+                        <td colspan="9" class="text-muted text-center py-4">ไม่พบข้อมูล</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
               
@@ -239,47 +253,6 @@
                 </button>
               </div>
 
-              <div class="card p-3 border-0 shadow-sm mb-4">
-                <h6 class="fw-bold mb-3 text-dark"><i class="fa-solid fa-table me-2 text-muted"></i>รายละเอียดการตรวจสอบของวันที่ {{ checkedDate }}</h6>
-                <div class="table-responsive">
-                  <table class="table table-bordered table-hover report-table" style="font-size: 0.85rem; min-width: 800px;">
-                    <thead>
-                      <tr>
-                        <th>ลำดับ</th>
-                        <th>รหัสสาขา</th>
-                        <th>ชื่อสาขา</th>
-                        <th>ชื่อบัญชีปลายทาง</th>
-                        <th>จำนวนเงิน</th>
-                        <th>ประเภทธนาคาร</th>
-                        <th>ประเภท(พนักงาน/ลูกค้า)</th>
-                        <th>มีเงินสดจริงหรือไม่(มี/ไม่มี)</th>
-                        <th>พบความผิดปกติ(ปกติ/ผิดปกติ)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr v-for="(item, index) in detailData" :key="index">
-                        <td class="text-center">{{ index + 1 }}</td>
-                        <td class="text-center">{{ item.StoreCode }}</td>
-                        <td class="text-start">{{ item.StoreNameE }}</td>
-                        <td class="text-start">{{ item.Ref1 }}</td>
-                        <td class="text-end">{{ formatAmount(item.Amount) }}</td>
-                        <td class="text-center">{{ item.BillType }}</td>
-                        <td class="text-center">{{ item.Type }}</td>
-                        <td class="text-center">{{ item.Cash_Exist }}</td>
-                        <td class="text-center">
-                          <span class="badge" :class="item.Is_Abnormal === 'ใช่' ? 'bg-danger' : 'bg-success'">
-                            {{ item.Is_Abnormal === 'ใช่' ? 'ผิดปกติ' : 'ปกติ' }}
-                          </span>
-                        </td>
-                      </tr>
-                      <tr v-if="detailData.length === 0">
-                        <td colspan="9" class="text-muted text-center py-4">ไม่พบข้อมูล</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              
               <button class="btn btn-light border btn-action w-100 py-2 text-dark fw-bold" @click="page = 'home'; loadSummary()">
                 <i class="fa-solid fa-house me-2"></i>กลับหน้าหลัก
               </button>
@@ -560,7 +533,7 @@
           this.fetchHistory(); 
         },
 
-        // 🌟 แคปหน้าจอสรุปเป็นไฟล์รูปภาพ (JPG) 🌟
+        // 🌟 แคปหน้าจอสรุปเป็นไฟล์รูปภาพ (JPG)
         downloadImage() {
           const captureElement = document.getElementById('reportCapture');
           if (!captureElement) return;
@@ -575,7 +548,7 @@
           });
         },
 
-        // 🌟 คัดลอกข้อความ (เสถียรในมือถือ) 🌟
+        // 🌟 คัดลอกข้อความ (เสถียรในมือถือ)
         copyReportMobile() {
           const textToCopy = `AM: ${this.amCode}\nสรุปการตรวจสอบ Cenpay Alert\nวันที่: ${this.checkedDate}\nจำนวนรวม = ${this.formatAmount(this.reportSummary.totalTxn)} Txn\nจำนวนบัญชีปลายทางที่ผิดปกติ = ${this.formatAmount(this.reportSummary.abnormalCount)} Txn\nบัญชีรับโอนเป็นพนักงานสาขา = ${this.formatAmount(this.reportSummary.employeeCount)} Txn`;
           
@@ -603,38 +576,43 @@
           document.body.removeChild(textArea);
         },
         
+        // 🌟 ดาวน์โหลด Excel ให้ฟอร์แมตตรงตามตัวอย่างที่ต้องการเป๊ะๆ 🌟
         downloadExcel() {
           if(!this.detailData || this.detailData.length === 0) return alert('ไม่พบข้อมูลสำหรับดาวน์โหลด');
           
           const excelData = [];
-          excelData.push([`รายการแจ้งเตือนการโอนเงินผิดปกติ Cenpay Alert ประจำวันที่ ${this.checkedDate}`]);
-          excelData.push([]); 
+          
+          // หัวคอลัมน์ (ตามรูป Excel ต้นฉบับ)
           excelData.push([
-            "ลำดับ", "รหัสสาขา", "ชื่อสาขา", "ชื่อบัญชีปลายทาง", 
-            "จำนวนเงิน", "ประเภทธนาคาร", "ประเภท(พนักงาน/ลูกค้า)", 
-            "มีเงินสดจริงหรือไม่(มี/ไม่มี)", "พบความผิดปกติ(ปกติ/ผิดปกติ)"
+            "DM", "StoreCode", "StoreNameE", "Ref1", 
+            "Amount", "Txn", "BillType", "date", 
+            "เป็นพนักงาน/ลูกค้า", "มีเงินสดจริงหรือไม่", "มีความผิดปกติหรือไม่"
           ]);
           
-          this.detailData.forEach((row, index) => {
+          // ข้อมูลรายบรรทัด
+          this.detailData.forEach(row => {
+            // แปลงคำให้ตรงกับในตาราง Excel ตัวอย่าง
+            let cashStatus = row.Cash_Exist === 'มี' ? 'มีเงินสดจริง' : (row.Cash_Exist === 'ไม่มี' ? 'ไม่มีเงินสดจริง' : row.Cash_Exist);
+            let abnormalStatus = row.Is_Abnormal === 'ใช่' ? 'ผิดปกติ' : 'ไม่ผิดปกติ';
+            
             excelData.push([
-              index + 1, row.StoreCode, row.StoreNameE, row.Ref1,
-              row.Amount, row.BillType, row.Type, row.Cash_Exist,
-              row.Is_Abnormal === 'ใช่' ? 'ผิดปกติ' : 'ปกติ'
+              row.DM || this.amCode,
+              row.StoreCode,
+              row.StoreNameE,
+              row.Ref1,
+              row.Amount, // ไม่ต้องใส่ comma Excel จะเห็นเป็นตัวเลข
+              row.Txn,
+              row.BillType,
+              row.date || this.checkedDate,
+              row.Type,
+              cashStatus,
+              abnormalStatus
             ]);
           });
-          
-          excelData.push([]); 
-          excelData.push([`AM ${this.amCode}`]);
-          excelData.push([`จำนวนรวม ${this.formatAmount(this.reportSummary.totalTxn)} Txn`]);
-          excelData.push([`จำนวนบัญชีปลายทางที่ผิดปกติ ${this.formatAmount(this.reportSummary.abnormalCount)} Txn`]);
-          excelData.push([`บัญชีรับโอนเป็นพนักงานสาขา ${this.formatAmount(this.reportSummary.employeeCount)} Txn`]);
 
           const ws = XLSX.utils.aoa_to_sheet(excelData);
-          if(!ws['!merges']) ws['!merges'] = [];
-          ws['!merges'].push({ s: {r:0, c:0}, e: {r:0, c:8} });
-
           const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, "Report");
+          XLSX.utils.book_append_sheet(wb, ws, "Checked_Data");
           XLSX.writeFile(wb, `Cenpay_Report_${this.amCode}_${this.checkedDate.replace(/\//g, '-')}.xlsx`);
         }
       }

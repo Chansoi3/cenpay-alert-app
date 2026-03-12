@@ -10,24 +10,36 @@
   <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { font-family: 'Sarabun', sans-serif; background-color: #f0f2f5; }
+    body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; color: #333; }
+    
+    /* สไตล์ Login */
     .login-wrapper {
       min-height: 100vh; display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg, #007bff 0%, #00d2ff 100%); padding: 20px;
+      background: linear-gradient(135deg, #0b5ed7 0%, #2a8bf2 100%); padding: 20px;
     }
     .login-card {
-      background: white; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-      overflow: hidden; width: 100%; max-width: 400px;
+      background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      overflow: hidden; width: 100%; max-width: 420px;
     }
-    .login-header { background: #f8f9fa; padding: 30px 20px; text-align: center; border-bottom: 1px solid #eee; }
-    .login-icon { font-size: 50px; color: #007bff; margin-bottom: 15px; }
-    .btn-login { border-radius: 50px; padding: 12px; font-weight: bold; letter-spacing: 1px; transition: all 0.3s; }
-    .btn-login:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,123,255,0.4); }
+    .login-header { background: #f8f9fa; padding: 30px 20px 20px; text-align: center; border-bottom: 1px solid #eaeaea; }
+    .login-icon { font-size: 45px; color: #0b5ed7; margin-bottom: 10px; }
+    
+    /* สไตล์ปุ่มมืออาชีพ */
+    .btn-action {
+      border-radius: 8px; font-weight: 600; letter-spacing: 0.5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s ease;
+    }
+    .btn-action:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+    
     .app-wrapper { padding-top: 15px; }
-    .card { border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: none; }
-    .text-red { color: #dc3545; font-weight: bold; }
-    .duplicate-alert { background-color: #fff3cd !important; border: 2px solid #ffc107 !important; }
-    .navbar { box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .card { border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #eee; }
+    
+    .duplicate-alert { background-color: #fff8e6 !important; border: 1px solid #ffc107 !important; }
+    .navbar { box-shadow: 0 2px 8px rgba(0,0,0,0.05); background: #fff; }
+    
+    /* Form Input สวยงาม */
+    .form-select-sm, .form-control { border-radius: 6px; border-color: #ddd; }
+    .form-select-sm:focus, .form-control:focus { border-color: #0b5ed7; box-shadow: 0 0 0 0.2rem rgba(11,94,215,0.15); }
   </style>
 </head>
 <body>
@@ -37,21 +49,21 @@
       <div class="login-card animate__animated animate__fadeIn">
         <div class="login-header">
           <i class="fa-solid fa-shield-halved login-icon"></i>
-          <h3 class="fw-bold text-primary mb-0">Cenpay Alert</h3>
-          <p class="text-muted small mt-1">ระบบตรวจสอบความผิดปกติ</p>
+          <h4 class="fw-bold text-primary mb-0">Cenpay Alert</h4>
+          <p class="text-muted small mt-1">ระบบตรวจสอบรายการผิดปกติ</p>
         </div>
         <div class="p-4">
           <label class="form-label text-muted small fw-bold">รหัส AreaCode ของคุณ</label>
-          <div class="input-group mb-4">
-            <span class="input-group-text bg-white"><i class="fa-solid fa-user text-muted"></i></span>
-            <input type="text" class="form-control form-control-lg fs-6" v-model="amCode" placeholder="ระบุ AreaCode (เช่น AM 503)">
+          <div class="input-group mb-4 shadow-sm" style="border-radius: 8px; overflow: hidden;">
+            <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-user text-muted"></i></span>
+            <input type="text" class="form-control form-control-lg fs-6 border-start-0 ps-0" v-model="amCode" placeholder="เช่น AM 503" @keyup.enter="loadSummary">
           </div>
-          <button class="btn btn-primary btn-login w-100" @click="loadSummary">
+          <button class="btn btn-primary btn-action w-100 py-2" @click="loadSummary">
             เข้าสู่ระบบ <i class="fa-solid fa-arrow-right ms-2"></i>
           </button>
           <div class="text-center mt-4">
             <a href="#" class="text-muted small text-decoration-none" data-bs-toggle="offcanvas" data-bs-target="#sidebarAdmin">
-              <i class="fa-solid fa-gear"></i> เข้าสู่โหมดผู้ดูแลระบบ (Admin)
+              <i class="fa-solid fa-gear"></i> โหมดผู้ดูแลระบบ
             </a>
           </div>
         </div>
@@ -59,12 +71,12 @@
     </div>
 
     <div v-else class="app-wrapper">
-      <nav class="navbar navbar-light bg-white mb-4 px-3 d-flex justify-content-between sticky-top">
-        <button class="btn btn-outline-dark btn-sm rounded-pill px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarAdmin">
-          <i class="fa-solid fa-gear"></i> Admin
+      <nav class="navbar mb-4 px-3 d-flex justify-content-between sticky-top">
+        <button class="btn btn-light btn-sm btn-action px-3 border" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarAdmin">
+          <i class="fa-solid fa-gear text-dark"></i> Admin
         </button>
         <span class="navbar-brand mb-0 h5 text-primary fw-bold mx-auto"><i class="fa-solid fa-shield-halved me-1"></i> Cenpay Alert</span>
-        <button class="btn btn-outline-primary btn-sm rounded-pill px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarHistory">
+        <button class="btn btn-primary btn-sm btn-action px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarHistory">
           <i class="fa-solid fa-clock-rotate-left"></i> ประวัติ
         </button>
       </nav>
@@ -73,21 +85,22 @@
         
         <div v-if="page === 'home'" class="row justify-content-center">
           <div class="col-md-8 col-sm-12">
-            <button class="btn btn-light mb-3 btn-sm border" @click="page = 'login'">
-              <i class="fa-solid fa-arrow-left"></i> ออกจากระบบ
-            </button>
-            <div class="card p-4">
-              <h5 class="mb-4 fw-bold"><i class="fa-solid fa-list-check text-primary me-2"></i>รายการรอตรวจสอบ ({{amCode}})</h5>
-              <div v-if="loading" class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+            <div class="d-flex justify-content-between mb-3">
+              <h5 class="fw-bold text-dark"><i class="fa-solid fa-list-check text-primary me-2"></i>รายการรอตรวจสอบ ({{amCode}})</h5>
+              <button class="btn btn-outline-danger btn-sm btn-action" @click="page = 'login'">ออกจากระบบ</button>
+            </div>
+            
+            <div class="card p-0 overflow-hidden">
+              <div v-if="loading" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
               <ul class="list-group list-group-flush" v-else>
-                <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3" v-for="item in summaryList" :key="item.date">
-                  <span class="fw-bold"><i class="fa-regular fa-calendar-days text-muted me-2"></i>{{ item.date }}</span>
+                <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3" v-for="item in summaryList" :key="item.date">
+                  <span class="fw-bold fs-6"><i class="fa-regular fa-calendar-days text-muted me-2"></i>{{ item.date }}</span>
                   <span>
-                    <span class="badge bg-danger rounded-pill me-3 fs-6">{{ item.count }} Txn</span>
-                    <button class="btn btn-primary btn-sm rounded-pill px-3" @click="startChecking(item.date)">ตรวจสอบ</button>
+                    <span class="badge bg-danger rounded-pill me-3 fs-6 px-3">{{ item.count }} Txn</span>
+                    <button class="btn btn-primary btn-sm btn-action px-4" @click="startChecking(item.date)">ตรวจสอบ</button>
                   </span>
                 </li>
-                <li class="list-group-item text-center text-muted py-5" v-if="summaryList.length === 0">
+                <li class="list-group-item text-center text-muted py-5 bg-light" v-if="summaryList.length === 0">
                   <i class="fa-solid fa-circle-check fs-1 text-success mb-3 d-block"></i>
                   ไม่มีรายการรอตรวจสอบแล้ว เยี่ยมมาก!
                 </li>
@@ -99,26 +112,37 @@
         <div v-if="page === 'checking'" class="row justify-content-center">
           <div class="col-md-8 col-sm-12">
             <div v-if="stores.length > 0">
-              <div class="alert alert-primary shadow-sm mb-3">
-                <h5 class="fw-bold mb-2"><i class="fa-solid fa-store me-2"></i>{{ currentStore.StoreCode }} - {{ currentStore.StoreNameE }}</h5>
-                <div class="d-flex justify-content-between align-items-center">
-                  <span class="badge bg-white text-primary border border-primary fs-6">สาขาที่ {{ currentStoreIndex + 1 }} / {{ stores.length }}</span>
-                  <span class="badge bg-danger fs-6">สาขานี้มี {{ currentStore.transactions.length }} Txn</span>
+              
+              <div class="alert alert-primary shadow-sm mb-3 border-0" style="border-radius: 12px;">
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-primary border-opacity-25">
+                  <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-store me-2"></i>{{ currentStore.StoreCode }} - {{ currentStore.StoreNameE }}</h5>
+                  <span class="badge bg-white text-primary border border-primary">สาขาที่ {{ currentStoreIndex + 1 }} / {{ stores.length }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                  <span class="text-dark fw-bold small"><i class="fa-regular fa-calendar-check text-primary me-1"></i> วันที่ตรวจสอบ: {{ checkedDate }}</span>
+                  <span class="badge bg-danger fs-6 px-3 py-1 rounded-pill shadow-sm">{{ currentStore.transactions.length }} Txn</span>
                 </div>
               </div>
 
-              <div class="card p-3 mb-3" v-for="(txn, idx) in currentStore.transactions" :key="idx" :class="{'duplicate-alert': txn.isDuplicate}">
-                <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
-                  <span class="text-muted small fw-bold">ลำดับที่ {{ idx + 1 }} | วันที่: {{ txn.date }}</span>
-                  <span class="badge bg-warning text-dark border border-warning" v-if="txn.isDuplicate"><i class="fa-solid fa-triangle-exclamation"></i> บัญชีซ้ำ</span>
+              <div class="card p-3 mb-3 border-0 shadow-sm" v-for="(txn, idx) in currentStore.transactions" :key="idx" :class="{'duplicate-alert': txn.isDuplicate}">
+                <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                  <span class="text-muted small fw-bold">รายการที่ {{ idx + 1 }}</span>
+                  <span class="badge bg-warning text-dark border border-warning shadow-sm" v-if="txn.isDuplicate">
+                    <i class="fa-solid fa-triangle-exclamation"></i> บัญชีซ้ำในสาขานี้
+                  </span>
                 </div>
                 <div class="mb-3">
-                  <div class="mb-1"><strong>ชื่อบัญชี:</strong> <span :class="{'text-danger fw-bold': txn.isDuplicate}">{{ txn.Ref1 }}</span></div>
-                  <div><strong>จำนวนเงิน:</strong> <span class="text-primary fw-bold fs-5">{{ txn.Amount }} ฿</span> | <strong>ประเภท:</strong> <span class="badge bg-secondary">{{ txn.BillType }}</span></div>
+                  <div class="mb-1 text-dark"><strong>ชื่อบัญชี:</strong> <span :class="{'text-danger fw-bold': txn.isDuplicate}">{{ txn.Ref1 }}</span></div>
+                  <div>
+                    <strong>ยอดเงิน:</strong> <span class="text-success fw-bold fs-5">{{ formatAmount(txn.Amount) }} ฿</span> 
+                    <span class="mx-2 text-muted">|</span> 
+                    <strong>ธนาคาร:</strong> <span class="badge bg-secondary px-2">{{ txn.BillType }}</span>
+                  </div>
                 </div>
-                <div class="row g-2 bg-light p-2 rounded">
+                
+                <div class="row g-2 bg-light p-2 rounded border">
                   <div class="col-12 col-md-4">
-                    <label class="form-label small mb-1 text-muted fw-bold">ประเภท</label>
+                    <label class="form-label small mb-1 text-muted fw-bold">ประเภทบัญชี</label>
                     <select class="form-select form-select-sm" v-model="txn.checkData.Type">
                       <option value="">-- เลือก --</option>
                       <option value="พนักงาน">พนักงาน</option>
@@ -134,7 +158,7 @@
                     </select>
                   </div>
                   <div class="col-12 col-md-4">
-                    <label class="form-label small mb-1 text-muted fw-bold">ความผิดปกติ</label>
+                    <label class="form-label small mb-1 text-muted fw-bold">พบความผิดปกติ</label>
                     <select class="form-select form-select-sm" v-model="txn.checkData.Is_Abnormal">
                       <option value="">-- เลือก --</option>
                       <option value="ใช่">ใช่ (ผิดปกติ)</option>
@@ -145,10 +169,10 @@
               </div>
 
               <div class="d-flex justify-content-between mt-4">
-                 <button class="btn btn-outline-secondary rounded-pill px-4" @click="page = 'home'">ย้อนกลับ</button>
-                 <button class="btn btn-success rounded-pill px-4" @click="nextStore" :disabled="!isStoreValid || loading">
-                   <span v-if="loading" class="spinner-border spinner-border-sm"></span>
-                   {{ currentStoreIndex === stores.length - 1 ? 'เสร็จสิ้นและบันทึก' : 'สาขาถัดไป' }} <i class="fa-solid fa-arrow-right ms-1"></i>
+                 <button class="btn btn-light border btn-action px-4 text-dark" @click="page = 'home'">ย้อนกลับ</button>
+                 <button class="btn btn-success btn-action px-4" @click="nextStore" :disabled="!isStoreValid || loading">
+                   <span v-if="loading" class="spinner-border spinner-border-sm me-1"></span>
+                   {{ currentStoreIndex === stores.length - 1 ? 'เสร็จสิ้นการตรวจสอบ' : 'สาขาถัดไป' }} <i class="fa-solid fa-check ms-1" v-if="currentStoreIndex === stores.length - 1"></i><i class="fa-solid fa-arrow-right ms-1" v-else></i>
                  </button>
               </div>
             </div>
@@ -157,25 +181,25 @@
 
         <div v-if="page === 'report'" class="row justify-content-center">
           <div class="col-md-8 col-sm-12">
-            <div class="card p-4 text-center mb-4 border-success border-2">
-              <i class="fa-solid fa-circle-check text-success" style="font-size: 60px; margin-bottom: 15px;"></i>
-              <h3 class="text-success fw-bold mb-4">สรุปผลการตรวจสอบ</h3>
+            <div class="card p-4 text-center mb-4 border-success" style="border-width: 2px;">
+              <i class="fa-solid fa-circle-check text-success" style="font-size: 55px; margin-bottom: 15px;"></i>
+              <h4 class="text-success fw-bold mb-4">บันทึกข้อมูลเรียบร้อย</h4>
               
               <div class="bg-light p-4 rounded text-start fs-6 border" id="reportText" style="line-height: 1.8;">
                 AM: <strong>{{ amCode }}</strong><br>
                 สรุปการตรวจสอบ Cenpay Alert<br>
                 วันที่: <strong>{{ checkedDate }}</strong><br>
-                จำนวนรวม = <strong>{{ reportSummary.totalTxn }}</strong> ครั้ง<br>
-                จำนวนบัญชีปลายทางที่ผิดปกติ = <strong class="text-danger">{{ reportSummary.abnormalCount }}</strong><br>
-                บัญชีรับโอนเป็นพนักงานสาขา = <strong class="text-primary">{{ reportSummary.employeeCount }}</strong>
+                จำนวนรวม = <strong>{{ formatAmount(reportSummary.totalTxn) }}</strong> ครั้ง<br>
+                จำนวนบัญชีปลายทางที่ผิดปกติ = <strong class="text-danger">{{ formatAmount(reportSummary.abnormalCount) }}</strong><br>
+                บัญชีรับโอนเป็นพนักงานสาขา = <strong class="text-primary">{{ formatAmount(reportSummary.employeeCount) }}</strong>
               </div>
               
               <div class="d-grid gap-2 d-md-block text-center mt-4">
-                <button class="btn btn-primary rounded-pill px-4 mx-1 my-1" @click="copyReport"><i class="fa-solid fa-copy me-2"></i>คัดลอกข้อความ</button>
-                <button class="btn btn-success rounded-pill px-4 mx-1 my-1" @click="downloadExcel"><i class="fa-solid fa-file-excel me-2"></i>ดาวน์โหลด Excel</button>
+                <button class="btn btn-primary btn-action px-4 mx-1 my-1" @click="copyReport"><i class="fa-solid fa-copy me-2"></i>คัดลอกข้อความ</button>
+                <button class="btn btn-success btn-action px-4 mx-1 my-1" @click="downloadExcel"><i class="fa-solid fa-file-excel me-2"></i>ดาวน์โหลด Excel</button>
               </div>
             </div>
-            <button class="btn btn-outline-secondary w-100 rounded-pill py-2" @click="page = 'home'; loadSummary()">กลับหน้าหลัก</button>
+            <button class="btn btn-light border btn-action w-100 py-2 text-dark fw-bold" @click="page = 'home'; loadSummary()">กลับหน้าหลัก</button>
           </div>
         </div>
 
@@ -184,26 +208,26 @@
 
     <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarAdmin">
       <div class="offcanvas-header bg-dark text-white">
-        <h5 class="offcanvas-title"><i class="fa-solid fa-gear me-2"></i>โหมดผู้ดูแลระบบ</h5>
+        <h5 class="offcanvas-title"><i class="fa-solid fa-gear me-2"></i>ผู้ดูแลระบบ</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
       </div>
       <div class="offcanvas-body">
         <div v-if="!isAdminLogged">
-          <label class="form-label text-muted small fw-bold">รหัสผ่านเข้า Admin:</label>
-          <input type="password" class="form-control mb-3" v-model="adminPass">
-          <button class="btn btn-dark w-100 rounded-pill" @click="loginAdmin">เข้าสู่ระบบ Admin</button>
+          <label class="form-label text-muted small fw-bold">รหัสผ่านแอดมิน</label>
+          <input type="password" class="form-control mb-3 shadow-sm" v-model="adminPass">
+          <button class="btn btn-dark btn-action w-100" @click="loginAdmin">เข้าสู่ระบบ</button>
         </div>
         <div v-else>
-          <div class="alert alert-success small"><i class="fa-solid fa-clock me-2"></i>อัปโหลดล่าสุด: <br><strong>{{ lastUploadTime }}</strong></div>
+          <div class="alert alert-success small shadow-sm"><i class="fa-solid fa-clock me-2"></i>อัปโหลดล่าสุด: <br><strong>{{ lastUploadTime }}</strong></div>
           <hr>
-          <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-file-excel me-2"></i>อัปโหลดไฟล์ (.xlsx)</h6>
-          <p class="small text-muted mb-2">* ระบบจะดึงข้อมูลเฉพาะจากชีตที่ชื่อ <b>RAW</b> เท่านั้น</p>
-          <input type="file" class="form-control mb-3" accept=".xlsx, .xls" @change="handleFileUpload">
-          <button class="btn btn-primary w-100 rounded-pill mb-4" @click="uploadExcelData" :disabled="uploading">
+          <h6 class="fw-bold text-primary mb-2"><i class="fa-solid fa-file-excel me-2"></i>อัปโหลดไฟล์ Excel (.xlsx)</h6>
+          <p class="small text-muted mb-3">* ระบบจะอ่านข้อมูลเฉพาะจากชีตชื่อ <b>RAW</b></p>
+          <input type="file" class="form-control mb-3 shadow-sm" accept=".xlsx, .xls" @change="handleFileUpload">
+          <button class="btn btn-primary btn-action w-100 mb-4" @click="uploadExcelData" :disabled="uploading">
             <span v-if="uploading" class="spinner-border spinner-border-sm me-2"></span>
-            {{ uploading ? 'กำลังอัปโหลด...' : 'นำข้อมูลเข้าและต่อท้าย' }}
+            {{ uploading ? 'กำลังดำเนินการ...' : 'อัปโหลดและต่อท้ายข้อมูล' }}
           </button>
-          <button class="btn btn-outline-danger w-100 rounded-pill" @click="isAdminLogged = false">ออกจากระบบ Admin</button>
+          <button class="btn btn-outline-danger btn-action w-100" @click="isAdminLogged = false">ออกจากโหมดแอดมิน</button>
         </div>
       </div>
     </div>
@@ -213,23 +237,25 @@
         <h5 class="offcanvas-title"><i class="fa-solid fa-clock-rotate-left me-2"></i>ประวัติการตรวจสอบ</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" id="closeHistoryBtn"></button>
       </div>
-      <div class="offcanvas-body">
-        <h6 class="text-muted fw-bold mb-3 border-bottom pb-2">ผู้ใช้งาน: {{ amCode }}</h6>
-        <div class="text-center mt-4" v-if="loadingHistory">
+      <div class="offcanvas-body bg-light p-3">
+        <h6 class="text-dark fw-bold mb-3 pb-2 border-bottom"><i class="fa-solid fa-user me-2"></i>AM: {{ amCode }}</h6>
+        <div class="text-center mt-5" v-if="loadingHistory">
           <div class="spinner-border text-primary"></div>
         </div>
         <div v-else>
           <div v-if="historyList.length === 0" class="text-center text-muted mt-5">
-            <i class="fa-solid fa-folder-open fs-1 mb-2 text-light"></i><br>ยังไม่มีประวัติการตรวจสอบ
+            <i class="fa-solid fa-folder-open fs-1 mb-3 text-secondary opacity-50"></i><br>ไม่มีข้อมูลประวัติ
           </div>
-          <div class="card mb-2 bg-light border-0 shadow-sm" v-for="h in historyList" :key="h.date">
+          <div class="card mb-3 border-0 shadow-sm" v-for="h in historyList" :key="h.date">
             <div class="card-body p-3">
               <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="fw-bold text-dark"><i class="fa-regular fa-calendar me-2 text-primary"></i>{{ h.date }}</span>
-                <span class="badge bg-success rounded-pill">{{ h.total }} Txn</span>
+                <span class="fw-bold text-primary"><i class="fa-regular fa-calendar me-2"></i>{{ h.date }}</span>
+                <span class="badge bg-success px-2">{{ h.total }} Txn</span>
               </div>
-              <div class="text-danger small mb-3 fw-bold" v-if="h.abnormal > 0"><i class="fa-solid fa-circle-exclamation me-1"></i>พบผิดปกติ {{ h.abnormal }} รายการ</div>
-              <button class="btn btn-sm btn-outline-primary w-100 rounded-pill" @click="viewHistoryDetail(h.date)">ดูรายละเอียด / ดาวน์โหลด</button>
+              <div class="text-danger small mb-3 fw-bold bg-danger bg-opacity-10 p-1 rounded px-2" v-if="h.abnormal > 0">
+                <i class="fa-solid fa-circle-exclamation me-1"></i>ผิดปกติ {{ h.abnormal }} รายการ
+              </div>
+              <button class="btn btn-sm btn-outline-primary btn-action w-100" @click="viewHistoryDetail(h.date)">ดูสรุป / ดาวน์โหลด Excel</button>
             </div>
           </div>
         </div>
@@ -239,7 +265,7 @@
   </div>
 
   <script>
-    // ⚠️ ตรงนี้สำคัญมาก นำ URL จาก Apps Script ของคุณมาวาง
+    // ⚠️ ลิงก์ API ของคุณ
     const API_URL = "https://script.google.com/macros/s/AKfycbyEBdGgAxPi1WM1cRyQcvQsQCARcd35ty-MwrW22ivV-YZCSXmnqQXswSfSLv9987ZRYQ/exec"; 
 
     new Vue({
@@ -267,6 +293,11 @@
       },
       mounted() { this.fetchLastUploadTime(); },
       methods: {
+        // ฟังก์ชันใส่ลูกน้ำ (Comma) ให้ยอดเงินและตัวเลข
+        formatAmount(val) {
+          if (!val) return '0';
+          return Number(val).toLocaleString('th-TH');
+        },
         async callAPI(payload) {
           try {
             const response = await fetch(API_URL, {
@@ -285,7 +316,7 @@
         loginAdmin() {
           if(this.adminPass === 'admin1234') { 
             this.isAdminLogged = true; this.adminPass = '';
-          } else { alert('รหัสผ่านไม่ถูกต้อง!'); }
+          } else { alert('รหัสผ่านไม่ถูกต้อง'); }
         },
         async fetchLastUploadTime() {
           const res = await this.callAPI({ action: 'getLastUpload' });
@@ -293,7 +324,6 @@
         },
         handleFileUpload(event) { this.uploadFile = event.target.files[0]; },
         
-        // --- ฟังก์ชันอัปโหลด ค้นหาชีต "RAW" และส่งไปต่อท้าย ---
         async uploadExcelData() {
           if(!this.uploadFile) return alert('กรุณาเลือกไฟล์ .xlsx ก่อนครับ');
           this.uploading = true;
@@ -304,18 +334,12 @@
               const data = new Uint8Array(e.target.result);
               const workbook = XLSX.read(data, {type: 'array'});
               
-              // 1. ค้นหาชีตที่ชื่อว่า "RAW" (ไม่สนใจตัวพิมพ์เล็ก/ใหญ่)
               let targetSheetName = workbook.SheetNames.find(s => s.trim().toUpperCase() === 'RAW');
-              
-              // หากไม่พบชีตชื่อ RAW ให้แสดงแจ้งเตือน และใช้ชีตแรกแทน
               if(!targetSheetName) {
-                alert('⚠️ ไม่พบชีตชื่อ "RAW" ในไฟล์ Excel (ระบบจะดึงข้อมูลจากชีตแรกแทนนะครับ)');
                 targetSheetName = workbook.SheetNames[0];
               }
 
               const worksheet = workbook.Sheets[targetSheetName];
-              
-              // 2. ดึงข้อมูลแบบ raw: false 
               const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: "", raw: false});
               
               if(jsonData.length > 0) {
@@ -332,18 +356,17 @@
                 
                 const cleanData = finalData.filter(row => row.join("") !== "");
 
-                // 3. ส่งเข้า Server (Server จะเอาไปต่อท้าย และตัด Header ให้เองอัตโนมัติ)
                 const newTime = await this.callAPI({ action: 'uploadExcelDirect', arrayData: cleanData });
                 
                 if(newTime && !newTime.includes("Error")) {
                   this.lastUploadTime = newTime;
-                  alert('✅ อัปโหลดไฟล์สำเร็จ! ข้อมูลถูกนำไปต่อท้ายและพร้อมตรวจสอบแล้วครับ');
+                  alert('✅ อัปโหลดและเพิ่มข้อมูลสำเร็จ!');
                   document.querySelector('input[type="file"]').value = ''; 
                 } else { 
-                  alert('❌ เกิดข้อผิดพลาดจากเซิร์ฟเวอร์: ' + newTime); 
+                  alert('❌ เกิดข้อผิดพลาด: ' + newTime); 
                 }
-              } else { alert("⚠️ ไม่พบข้อมูลในชีตครับ"); }
-            } catch (err) { alert("❌ เกิดข้อผิดพลาดในการอ่านไฟล์: " + err.message); }
+              } else { alert("⚠️ ไม่พบข้อมูลในแผ่นงาน"); }
+            } catch (err) { alert("❌ เกิดข้อผิดพลาด: " + err.message); }
             this.uploading = false;
             this.uploadFile = null;
           };
@@ -352,7 +375,7 @@
         },
 
         async loadSummary() {
-          if(!this.amCode) { alert('กรุณาระบุ AreaCode ก่อนเข้าสู่ระบบ'); return; }
+          if(!this.amCode) { alert('กรุณาระบุ AreaCode'); return; }
           this.loading = true; this.page = 'home';
           this.fetchHistory();
           this.summaryList = await this.callAPI({ action: 'getSummary', amCode: this.amCode }) || [];
@@ -371,19 +394,30 @@
           this.loading = true; this.checkedDate = date;
           const txns = await this.callAPI({ action: 'getTransactions', date: date, amCode: this.amCode }) || [];
           
-          const nameCounts = {};
-          txns.forEach(t => { 
-            let simpleName = this.cleanName(t.Ref1);
-            nameCounts[simpleName] = (nameCounts[simpleName] || 0) + 1; 
+          const storeGroups = {};
+          
+          // 1. จัดกลุ่มข้อมูลตามสาขาก่อน
+          txns.forEach(t => {
+            if (!storeGroups[t.StoreCode]) {
+              storeGroups[t.StoreCode] = { StoreCode: t.StoreCode, StoreNameE: t.StoreNameE, transactions: [] };
+            }
+            storeGroups[t.StoreCode].transactions.push(t);
           });
 
-          const storeGroups = {};
-          txns.forEach(t => {
-            let simpleName = this.cleanName(t.Ref1);
-            t.isDuplicate = nameCounts[simpleName] > 1;
-            t.checkData = { Type: '', Cash_Exist: '', Is_Abnormal: '' };
-            if (!storeGroups[t.StoreCode]) storeGroups[t.StoreCode] = { StoreCode: t.StoreCode, StoreNameE: t.StoreNameE, transactions: [] };
-            storeGroups[t.StoreCode].transactions.push(t);
+          // 2. ตรวจสอบชื่อซ้ำ "เฉพาะในสาขานั้นๆ" (ตามที่คุณต้องการ)
+          Object.values(storeGroups).forEach(store => {
+            const nameCounts = {};
+            // นับชื่อ
+            store.transactions.forEach(t => { 
+              let simpleName = this.cleanName(t.Ref1);
+              nameCounts[simpleName] = (nameCounts[simpleName] || 0) + 1; 
+            });
+            // ติดสถานะซ้ำ
+            store.transactions.forEach(t => {
+              let simpleName = this.cleanName(t.Ref1);
+              t.isDuplicate = nameCounts[simpleName] > 1;
+              t.checkData = { Type: '', Cash_Exist: '', Is_Abnormal: '' };
+            });
           });
 
           this.stores = Object.values(storeGroups);
@@ -416,7 +450,7 @@
           this.fetchHistory(); 
         },
         copyReport() {
-          navigator.clipboard.writeText(document.getElementById('reportText').innerText).then(() => alert('คัดลอกข้อความสรุปเรียบร้อยแล้ว!'));
+          navigator.clipboard.writeText(document.getElementById('reportText').innerText).then(() => alert('คัดลอกสำเร็จ!'));
         },
         downloadExcel() {
           if(!this.detailData || this.detailData.length === 0) return alert('ไม่พบข้อมูลสำหรับดาวน์โหลด');

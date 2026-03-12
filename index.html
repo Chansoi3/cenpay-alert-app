@@ -68,7 +68,7 @@
         </div>
         <div class="p-4 pt-2">
           <label class="form-label text-secondary small fw-bold mb-1">AreaCode ผู้ตรวจสอบ</label>
-          <input type="text" class="form-control form-control-lg fs-6 mb-4 bg-light" v-model="amCode" placeholder="ระบุ AreaCode เช่น AM 503" @keyup.enter="loadSummary">
+          <input type="text" class="form-control form-control-lg fs-6 mb-4 bg-light" v-model="amCode" placeholder="ระบุ AreaCode เช่น AM503" @keyup.enter="loadSummary">
           <button class="btn btn-primary w-100 py-2" @click="loadSummary">
             เข้าสู่ระบบ
           </button>
@@ -199,6 +199,15 @@
             <div v-else>
               <h5 class="text-success fw-bold text-center mb-4"><i class="fa-solid fa-circle-check me-2"></i>บันทึกข้อมูลเรียบร้อย</h5>
               
+              <div class="bg-white p-4 rounded shadow-sm border mb-4 text-start mx-auto" style="font-size: 1.05rem; line-height: 1.8; max-width: 600px;">
+                AM: <strong>{{ amCode }}</strong><br>
+                สรุปการตรวจสอบ Cenpay Alert<br>
+                วันที่: <strong>{{ formatShortDate(checkedDate) }}</strong><br>
+                จำนวนรวม = <strong>{{ formatAmount(reportSummary.totalTxn) }}</strong> Txn<br>
+                จำนวนบัญชีปลายทางที่ผิดปกติ = <strong class="text-danger">{{ formatAmount(reportSummary.abnormalCount) }}</strong> Txn<br>
+                บัญชีรับโอนเป็นพนักงานสาขา = <strong class="text-primary">{{ formatAmount(reportSummary.employeeCount) }}</strong> Txn
+              </div>
+              
               <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
                 <button class="btn btn-primary px-4 py-2" @click="shareReport">
                   <i class="fa-solid fa-share-nodes me-2"></i>แชร์รูปภาพ
@@ -230,7 +239,8 @@
                     <tbody>
                       <tr v-for="(item, index) in detailData" :key="index">
                         <td class="text-center">{{ index + 1 }}</td>
-                        <td class="text-center">{{ item.date }}</td> <td class="text-center">{{ item.StoreCode }}</td>
+                        <td class="text-center">{{ formatShortDate(item.date) }}</td>
+                        <td class="text-center">{{ item.StoreCode }}</td>
                         <td class="text-start">{{ item.StoreNameE }}</td>
                         <td class="text-start">{{ item.Ref1 }}</td>
                         <td class="text-end pe-3">{{ formatAmount(item.Amount) }}</td>
@@ -352,6 +362,21 @@
         formatAmount(val) {
           if (!val) return '0';
           return Number(val).toLocaleString('th-TH');
+        },
+        
+        // 🌟 ฟังก์ชันแปลงรูปแบบวันที่จาก DD/MM/YYYY เป็น DD/MM/YY (ตัดปี 2 หลัก) 🌟
+        formatShortDate(val) {
+          if (!val) return '';
+          let str = val.toString();
+          let parts = str.split('/');
+          if (parts.length === 3) {
+            let year = parts[2];
+            if (year.length === 4) {
+              year = year.slice(-2); // ตัดเอาแค่ 2 ตัวท้ายของปี
+            }
+            return `${parts[0]}/${parts[1]}/${year}`;
+          }
+          return str;
         },
         
         similarity(s1, s2) {
@@ -572,7 +597,8 @@
         },
 
         copyReportMobile(showAlert = true) {
-          const textToCopy = `AM: ${this.amCode}\nสรุปการตรวจสอบ Cenpay Alert\nวันที่: ${this.checkedDate}\nจำนวนรวม = ${this.formatAmount(this.reportSummary.totalTxn)} Txn\nจำนวนบัญชีปลายทางที่ผิดปกติ = ${this.formatAmount(this.reportSummary.abnormalCount)} Txn\nบัญชีรับโอนเป็นพนักงานสาขา = ${this.formatAmount(this.reportSummary.employeeCount)} Txn`;
+          // ใช้ formatShortDate ตรงนี้เพื่อให้ข้อความที่ก็อปมีวันที่แบบ dd/mm/yy
+          const textToCopy = `AM: ${this.amCode}\nสรุปการตรวจสอบ Cenpay Alert\nวันที่: ${this.formatShortDate(this.checkedDate)}\nจำนวนรวม = ${this.formatAmount(this.reportSummary.totalTxn)} Txn\nจำนวนบัญชีปลายทางที่ผิดปกติ = ${this.formatAmount(this.reportSummary.abnormalCount)} Txn\nบัญชีรับโอนเป็นพนักงานสาขา = ${this.formatAmount(this.reportSummary.employeeCount)} Txn`;
           
           const textArea = document.createElement("textarea");
           textArea.value = textToCopy;
@@ -620,7 +646,7 @@
               row.Amount, 
               row.Txn,
               row.BillType,
-              row.date || this.checkedDate,
+              row.date ? this.formatShortDate(row.date) : this.formatShortDate(this.checkedDate),
               row.Type,
               cashStatus,
               abnormalStatus

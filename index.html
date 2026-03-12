@@ -238,7 +238,7 @@
   </div>
 
   <script>
-    // ⚠️ ตรวจสอบ URL ของคุณให้ถูกต้องตรงนี้
+    // ⚠️ ตรงนี้สำคัญมาก นำ URL จาก Apps Script ของคุณมาวาง
     const API_URL = "https://script.google.com/macros/s/AKfycbyEBdGgAxPi1WM1cRyQcvQsQCARcd35ty-MwrW22ivV-YZCSXmnqQXswSfSLv9987ZRYQ/exec"; 
 
     new Vue({
@@ -292,7 +292,7 @@
         },
         handleFileUpload(event) { this.uploadFile = event.target.files[0]; },
         
-        // ฟังก์ชันใหม่! อ่านและแปลงเป็น CSV ส่งเข้า Server เพื่อความสมบูรณ์ 100%
+        // ฟังก์ชันอัปโหลด Excel (แก้ปัญหาข้อมูลแหว่ง 100%)
         async uploadExcelData() {
           if(!this.uploadFile) return alert('กรุณาเลือกไฟล์ .xlsx ก่อนครับ');
           this.uploading = true;
@@ -301,18 +301,35 @@
           reader.onload = async (e) => {
             try {
               const data = new Uint8Array(e.target.result);
-              const workbook = XLSX.read(data, {type: 'array', cellDates: true});
+              const workbook = XLSX.read(data, {type: 'array'});
               const firstSheetName = workbook.SheetNames[0]; 
               const worksheet = workbook.Sheets[firstSheetName];
               
-              const csvString = XLSX.utils.sheet_to_csv(worksheet);
+              // raw: false บังคับอ่านให้เป็น Text ทั้งหมดเหมือนที่ตาเห็นใน Excel
+              const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: "", raw: false});
               
-              if(csvString) {
-                const newTime = await this.callAPI({ action: 'uploadExcelDirect', csvText: csvString });
+              if(jsonData.length > 0) {
+                // หาจำนวนคอลัมน์สูงสุด ป้องกันคอลัมน์หาย
+                let maxCols = 0;
+                jsonData.forEach(row => { if(row.length > maxCols) maxCols = row.length; });
+                
+                // จัดเป็นตาราง 2 มิติที่สมบูรณ์เป๊ะๆ
+                const finalData = jsonData.map(row => {
+                  let newRow = [];
+                  for(let i = 0; i < maxCols; i++) {
+                    newRow.push(row[i] !== undefined ? row[i].toString().trim() : "");
+                  }
+                  return newRow;
+                });
+                
+                // กรองแถวว่างๆ ทิ้ง
+                const cleanData = finalData.filter(row => row.join("") !== "");
+
+                const newTime = await this.callAPI({ action: 'uploadExcelDirect', arrayData: cleanData });
                 
                 if(newTime && !newTime.includes("Error")) {
                   this.lastUploadTime = newTime;
-                  alert('✅ อัปโหลดไฟล์สำเร็จ! ข้อมูลมาครบถ้วนแล้วครับ');
+                  alert('✅ อัปโหลดไฟล์สำเร็จ! ข้อมูลมาครบถ้วน 100% แน่นอนครับ');
                   document.querySelector('input[type="file"]').value = ''; 
                 } else { 
                   alert('❌ เกิดข้อผิดพลาดจากเซิร์ฟเวอร์: ' + newTime); 

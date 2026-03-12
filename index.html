@@ -196,11 +196,12 @@
         <div v-else>
           <div class="alert alert-success small"><i class="fa-solid fa-clock me-2"></i>อัปโหลดล่าสุด: <br><strong>{{ lastUploadTime }}</strong></div>
           <hr>
-          <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-file-excel me-2"></i>อัปโหลดไฟล์ RAW_Data (.xlsx)</h6>
+          <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-file-excel me-2"></i>อัปโหลดไฟล์ (.xlsx)</h6>
+          <p class="small text-muted mb-2">* ระบบจะดึงข้อมูลเฉพาะจากชีตที่ชื่อ <b>RAW</b> เท่านั้น</p>
           <input type="file" class="form-control mb-3" accept=".xlsx, .xls" @change="handleFileUpload">
           <button class="btn btn-primary w-100 rounded-pill mb-4" @click="uploadExcelData" :disabled="uploading">
             <span v-if="uploading" class="spinner-border spinner-border-sm me-2"></span>
-            {{ uploading ? 'กำลังอัปโหลด...' : 'อัปโหลดเข้าฐานข้อมูล' }}
+            {{ uploading ? 'กำลังอัปโหลด...' : 'นำข้อมูลเข้าและต่อท้าย' }}
           </button>
           <button class="btn btn-outline-danger w-100 rounded-pill" @click="isAdminLogged = false">ออกจากระบบ Admin</button>
         </div>
@@ -292,7 +293,7 @@
         },
         handleFileUpload(event) { this.uploadFile = event.target.files[0]; },
         
-        // ฟังก์ชันอัปโหลด Excel (แก้ปัญหาข้อมูลแหว่ง 100%)
+        // --- ฟังก์ชันอัปโหลด ค้นหาชีต "RAW" และส่งไปต่อท้าย ---
         async uploadExcelData() {
           if(!this.uploadFile) return alert('กรุณาเลือกไฟล์ .xlsx ก่อนครับ');
           this.uploading = true;
@@ -302,18 +303,25 @@
             try {
               const data = new Uint8Array(e.target.result);
               const workbook = XLSX.read(data, {type: 'array'});
-              const firstSheetName = workbook.SheetNames[0]; 
-              const worksheet = workbook.Sheets[firstSheetName];
               
-              // raw: false บังคับอ่านให้เป็น Text ทั้งหมดเหมือนที่ตาเห็นใน Excel
+              // 1. ค้นหาชีตที่ชื่อว่า "RAW" (ไม่สนใจตัวพิมพ์เล็ก/ใหญ่)
+              let targetSheetName = workbook.SheetNames.find(s => s.trim().toUpperCase() === 'RAW');
+              
+              // หากไม่พบชีตชื่อ RAW ให้แสดงแจ้งเตือน และใช้ชีตแรกแทน
+              if(!targetSheetName) {
+                alert('⚠️ ไม่พบชีตชื่อ "RAW" ในไฟล์ Excel (ระบบจะดึงข้อมูลจากชีตแรกแทนนะครับ)');
+                targetSheetName = workbook.SheetNames[0];
+              }
+
+              const worksheet = workbook.Sheets[targetSheetName];
+              
+              // 2. ดึงข้อมูลแบบ raw: false 
               const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: "", raw: false});
               
               if(jsonData.length > 0) {
-                // หาจำนวนคอลัมน์สูงสุด ป้องกันคอลัมน์หาย
                 let maxCols = 0;
                 jsonData.forEach(row => { if(row.length > maxCols) maxCols = row.length; });
                 
-                // จัดเป็นตาราง 2 มิติที่สมบูรณ์เป๊ะๆ
                 const finalData = jsonData.map(row => {
                   let newRow = [];
                   for(let i = 0; i < maxCols; i++) {
@@ -322,19 +330,19 @@
                   return newRow;
                 });
                 
-                // กรองแถวว่างๆ ทิ้ง
                 const cleanData = finalData.filter(row => row.join("") !== "");
 
+                // 3. ส่งเข้า Server (Server จะเอาไปต่อท้าย และตัด Header ให้เองอัตโนมัติ)
                 const newTime = await this.callAPI({ action: 'uploadExcelDirect', arrayData: cleanData });
                 
                 if(newTime && !newTime.includes("Error")) {
                   this.lastUploadTime = newTime;
-                  alert('✅ อัปโหลดไฟล์สำเร็จ! ข้อมูลมาครบถ้วน 100% แน่นอนครับ');
+                  alert('✅ อัปโหลดไฟล์สำเร็จ! ข้อมูลถูกนำไปต่อท้ายและพร้อมตรวจสอบแล้วครับ');
                   document.querySelector('input[type="file"]').value = ''; 
                 } else { 
                   alert('❌ เกิดข้อผิดพลาดจากเซิร์ฟเวอร์: ' + newTime); 
                 }
-              } else { alert("⚠️ ไม่พบข้อมูลในไฟล์ Excel ครับ"); }
+              } else { alert("⚠️ ไม่พบข้อมูลในชีตครับ"); }
             } catch (err) { alert("❌ เกิดข้อผิดพลาดในการอ่านไฟล์: " + err.message); }
             this.uploading = false;
             this.uploadFile = null;

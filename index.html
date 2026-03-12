@@ -12,7 +12,6 @@
   <style>
     body { font-family: 'Sarabun', sans-serif; background-color: #f4f6f9; color: #333; }
     
-    /* สไตล์ Login */
     .login-wrapper {
       min-height: 100vh; display: flex; align-items: center; justify-content: center;
       background: linear-gradient(135deg, #0b5ed7 0%, #2a8bf2 100%); padding: 20px;
@@ -24,7 +23,6 @@
     .login-header { background: #f8f9fa; padding: 30px 20px 20px; text-align: center; border-bottom: 1px solid #eaeaea; }
     .login-icon { font-size: 45px; color: #0b5ed7; margin-bottom: 10px; }
     
-    /* สไตล์ปุ่มมืออาชีพ */
     .btn-action {
       border-radius: 8px; font-weight: 600; letter-spacing: 0.5px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.2s ease;
@@ -37,7 +35,6 @@
     .duplicate-alert { background-color: #fff8e6 !important; border: 1px solid #ffc107 !important; }
     .navbar { box-shadow: 0 2px 8px rgba(0,0,0,0.05); background: #fff; }
     
-    /* Form Input สวยงาม */
     .form-select-sm, .form-control { border-radius: 6px; border-color: #ddd; }
     .form-select-sm:focus, .form-control:focus { border-color: #0b5ed7; box-shadow: 0 0 0 0.2rem rgba(11,94,215,0.15); }
   </style>
@@ -102,7 +99,7 @@
                 </li>
                 <li class="list-group-item text-center text-muted py-5 bg-light" v-if="summaryList.length === 0">
                   <i class="fa-solid fa-circle-check fs-1 text-success mb-3 d-block"></i>
-                  ไม่มีรายการรอตรวจสอบแล้ว เยี่ยมมาก!
+                  คุณตรวจสอบรายการครบถ้วนทั้งหมดแล้ว เยี่ยมมาก!
                 </li>
               </ul>
             </div>
@@ -293,7 +290,6 @@
       },
       mounted() { this.fetchLastUploadTime(); },
       methods: {
-        // ฟังก์ชันใส่ลูกน้ำ (Comma) ให้ยอดเงินและตัวเลข
         formatAmount(val) {
           if (!val) return '0';
           return Number(val).toLocaleString('th-TH');
@@ -396,7 +392,6 @@
           
           const storeGroups = {};
           
-          // 1. จัดกลุ่มข้อมูลตามสาขาก่อน
           txns.forEach(t => {
             if (!storeGroups[t.StoreCode]) {
               storeGroups[t.StoreCode] = { StoreCode: t.StoreCode, StoreNameE: t.StoreNameE, transactions: [] };
@@ -404,15 +399,12 @@
             storeGroups[t.StoreCode].transactions.push(t);
           });
 
-          // 2. ตรวจสอบชื่อซ้ำ "เฉพาะในสาขานั้นๆ" (ตามที่คุณต้องการ)
           Object.values(storeGroups).forEach(store => {
             const nameCounts = {};
-            // นับชื่อ
             store.transactions.forEach(t => { 
               let simpleName = this.cleanName(t.Ref1);
               nameCounts[simpleName] = (nameCounts[simpleName] || 0) + 1; 
             });
-            // ติดสถานะซ้ำ
             store.transactions.forEach(t => {
               let simpleName = this.cleanName(t.Ref1);
               t.isDuplicate = nameCounts[simpleName] > 1;

@@ -288,7 +288,7 @@
           <div class="alert alert-success small border-0"><i class="fa-solid fa-clock me-2"></i>อัปโหลดล่าสุด: <br><strong>{{ lastUploadTime }}</strong></div>
           <hr>
           <h6 class="fw-bold text-primary mb-2"><i class="fa-solid fa-file-excel me-2"></i>อัปโหลดไฟล์ Excel (.xlsx)</h6>
-          <p class="small text-muted mb-3">* ระบบจะอ่านข้อมูลเฉพาะจากชีตชื่อ <b>RAW</b></p>
+          <p class="small text-muted mb-3">* ระบบสามารถดึงไฟล์จากอีเมลได้อัตโนมัติแล้ว หรือคุณสามารถอัปโหลดเองได้ที่นี่</p>
           <input type="file" class="form-control mb-3" accept=".xlsx, .xls" @change="handleFileUpload">
           <button class="btn btn-primary w-100 mb-3" @click="uploadExcelData" :disabled="uploading">
             <span v-if="uploading" class="spinner-border spinner-border-sm me-2 border-2"></span>
@@ -365,21 +365,18 @@
           return Number(val).toLocaleString('th-TH');
         },
         
-        // 🌟 ฟังก์ชันแปลงรูปแบบวันที่ให้เป็น mm/dd/yy ตลอดทั้งระบบ 🌟
+        // แปลงรูปแบบวันที่เป็น mm/dd/yy ตลอดระบบ
         formatDateMMDDYY(val) {
           if (!val) return '';
           let str = val.toString();
-          // แปลงจากข้อมูลต้นทาง (DD/MM/YYYY)
           let parts = str.split('/');
           if (parts.length === 3) {
             let day = parts[0].padStart(2, '0');
             let month = parts[1].padStart(2, '0');
             let year = parts[2];
-            // ตัดให้ปีเหลือแค่ 2 หลัก
             if (year.length === 4) {
               year = year.slice(-2);
             }
-            // สลับเป็น mm/dd/yy
             return `${month}/${day}/${year}`;
           }
           return str;

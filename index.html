@@ -71,7 +71,7 @@
           
           <div class="mb-4">
             <select class="form-select form-select-lg fs-6 bg-light text-center fw-bold text-primary shadow-sm" v-model="amCode" :disabled="isFetchingAMs" @change="loadSummary">
-              <option value="" disabled>{{ isFetchingAMs ? 'กำลังดึงข้อมูลรายชื่อ...' : '-- กรุณาเลือกพื้นที่ (AM) --' }}</option>
+              <option value="" disabled>{{ isFetchingAMs ? 'กำลังดึงข้อมูลรายชื่อ...' : '-เลือกพื้นที่(AM)-' }}</option>
               <option v-for="am in amList" :key="am" :value="am">{{ am }}</option>
             </select>
           </div>
@@ -80,12 +80,6 @@
             <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
             เข้าสู่ระบบ <i class="fa-solid fa-arrow-right ms-1"></i>
           </button>
-
-          <div class="text-center mt-3">
-            <a href="#" class="text-muted small text-decoration-none" data-bs-toggle="offcanvas" data-bs-target="#sidebarAdmin">
-              <i class="fa-solid fa-gear me-1"></i> โหมดผู้ดูแลระบบ
-            </a>
-          </div>
         </div>
       </div>
     </div>
@@ -279,32 +273,6 @@
       </div>
     </div>
 
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarAdmin">
-      <div class="offcanvas-header bg-dark text-white">
-        <h6 class="offcanvas-title mb-0"><i class="fa-solid fa-gear me-2"></i>ผู้ดูแลระบบ</h6>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
-      </div>
-      <div class="offcanvas-body">
-        <div v-if="!isAdminLogged">
-          <label class="form-label text-muted small fw-bold">รหัสผ่านแอดมิน</label>
-          <input type="password" class="form-control mb-3 bg-light" v-model="adminPass">
-          <button class="btn btn-dark w-100" @click="loginAdmin">เข้าสู่ระบบ</button>
-        </div>
-        <div v-else>
-          <div class="alert alert-success small border-0"><i class="fa-solid fa-clock me-2"></i>อัปโหลดล่าสุด: <br><strong>{{ lastUploadTime }}</strong></div>
-          <hr>
-          <h6 class="fw-bold text-primary mb-2"><i class="fa-solid fa-file-excel me-2"></i>อัปโหลดไฟล์ Excel (.xlsx)</h6>
-          <p class="small text-muted mb-3">* ระบบสามารถดึงไฟล์จากอีเมลได้อัตโนมัติแล้ว หรือคุณสามารถอัปโหลดเองได้ที่นี่</p>
-          <input type="file" class="form-control mb-3" accept=".xlsx, .xls" @change="handleFileUpload">
-          <button class="btn btn-primary w-100 mb-3" @click="uploadExcelData" :disabled="uploading">
-            <span v-if="uploading" class="spinner-border spinner-border-sm me-2 border-2"></span>
-            {{ uploading ? 'กำลังดำเนินการ...' : 'อัปโหลดและต่อท้ายข้อมูล' }}
-          </button>
-          <button class="btn btn-outline-danger w-100" @click="isAdminLogged = false">ออกจากโหมดแอดมิน</button>
-        </div>
-      </div>
-    </div>
-
     <div class="offcanvas offcanvas-end" tabindex="-1" id="sidebarHistory">
       <div class="offcanvas-header bg-primary text-white">
         <h6 class="offcanvas-title mb-0"><i class="fa-solid fa-clock-rotate-left me-2"></i>ประวัติการตรวจสอบ</h6>
@@ -353,11 +321,7 @@
         stores: [], currentStoreIndex: 0,
         checkedResults: [], checkedDate: '',
         reportSummary: { totalTxn: 0, abnormalCount: 0, employeeCount: 0 },
-        detailData: [], 
-        
-        isAdminLogged: false, adminPass: '',
-        uploadFile: null, uploading: false,
-        lastUploadTime: 'กำลังดึงข้อมูล...'
+        detailData: []
       },
       computed: {
         currentStore() { return this.stores[this.currentStoreIndex] || { transactions: [] }; },
@@ -367,19 +331,18 @@
         }
       },
       mounted() { 
-        this.fetchLastUploadTime(); 
         this.fetchAMList();
       },
       methods: {
-        // 🌟 ดึงรายชื่อ AM อัตโนมัติตอนเปิดเว็บ
+        // 🌟 ดึงรายชื่อ AM อัตโนมัติและกรอง AM_LOGIN ออกอีกชั้น 🌟
         async fetchAMList() {
           this.isFetchingAMs = true;
           const list = await this.callAPI({ action: 'getAMList' });
           if (list && list.length > 0) {
-            this.amList = list;
+            // กรองคำว่า AM_LOGIN หรือคำที่ไม่ใช่ออกให้ชัวร์ที่สุด
+            this.amList = list.filter(am => am !== 'AM_LOGIN' && am !== 'AREACODE');
           } else {
-            // สำรองเผื่อข้อมูลว่าง
-            this.amList = ['AM501', 'AM502', 'AM503', 'AM504', 'AM505'];
+            this.amList = [];
           }
           this.isFetchingAMs = false;
         },
@@ -448,64 +411,6 @@
           }
         },
 
-        loginAdmin() {
-          if(this.adminPass === 'admin1234') { 
-            this.isAdminLogged = true; this.adminPass = '';
-          } else { alert('รหัสผ่านไม่ถูกต้อง'); }
-        },
-        async fetchLastUploadTime() {
-          const res = await this.callAPI({ action: 'getLastUpload' });
-          if(res) this.lastUploadTime = res;
-        },
-        handleFileUpload(event) { this.uploadFile = event.target.files[0]; },
-        
-        async uploadExcelData() {
-          if(!this.uploadFile) return alert('กรุณาเลือกไฟล์ .xlsx ก่อนครับ');
-          this.uploading = true;
-          
-          const reader = new FileReader();
-          reader.onload = async (e) => {
-            try {
-              const data = new Uint8Array(e.target.result);
-              const workbook = XLSX.read(data, {type: 'array'});
-              
-              let targetSheetName = workbook.SheetNames.find(s => s.trim().toUpperCase() === 'RAW');
-              if(!targetSheetName) targetSheetName = workbook.SheetNames[0];
-
-              const worksheet = workbook.Sheets[targetSheetName];
-              const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: "", raw: false});
-              
-              if(jsonData.length > 0) {
-                let maxCols = 0;
-                jsonData.forEach(row => { if(row.length > maxCols) maxCols = row.length; });
-                
-                const finalData = jsonData.map(row => {
-                  let newRow = [];
-                  for(let i = 0; i < maxCols; i++) {
-                    newRow.push(row[i] !== undefined ? row[i].toString().trim() : "");
-                  }
-                  return newRow;
-                });
-                
-                const cleanData = finalData.filter(row => row.join("") !== "");
-                const newTime = await this.callAPI({ action: 'uploadExcelDirect', arrayData: cleanData });
-                
-                if(newTime && !newTime.includes("Error")) {
-                  this.lastUploadTime = newTime;
-                  alert('✅ อัปโหลดและเพิ่มข้อมูลสำเร็จ!');
-                  document.querySelector('input[type="file"]').value = ''; 
-                } else { 
-                  alert('❌ เกิดข้อผิดพลาด: ' + newTime); 
-                }
-              } else { alert("⚠️ ไม่พบข้อมูลในแผ่นงาน"); }
-            } catch (err) { alert("❌ เกิดข้อผิดพลาด: " + err.message); }
-            this.uploading = false;
-            this.uploadFile = null;
-          };
-          reader.onerror = () => { alert("❌ ไม่สามารถอ่านไฟล์ได้"); this.uploading = false; };
-          reader.readAsArrayBuffer(this.uploadFile);
-        },
-
         async loadSummary() {
           if(!this.amCode) { return; } // ถ้ายังไม่เลือก AM ให้ไม่ทำงาน
           
@@ -514,15 +419,18 @@
           this.summaryList = await this.callAPI({ action: 'getSummary', amCode: this.amCode }) || [];
           this.loading = false;
         },
+        
         async fetchHistory() {
           this.loadingHistory = true;
           this.historyList = await this.callAPI({ action: 'getHistory', amCode: this.amCode }) || [];
           this.loadingHistory = false;
         },
+        
         cleanName(fullName) {
           if(!fullName) return "";
           return fullName.replace(/^(นาย|นาง|นางสาว|น\.ส\.|ด\.ช\.|ด\.ญ\.|Mr\.|Mrs\.|Miss|Ms\.)\s*/i, '').trim().split(" ")[0]; 
         },
+        
         async startChecking(date) {
           this.loading = true; this.checkedDate = date;
           const txns = await this.callAPI({ action: 'getTransactions', date: date, amCode: this.amCode }) || [];
@@ -557,6 +465,7 @@
           this.currentStoreIndex = 0; this.checkedResults = [];
           this.page = 'checking'; this.loading = false;
         },
+        
         async nextStore() {
           this.currentStore.transactions.forEach(t => {
             this.checkedResults.push({ ...t, Type: t.checkData.Type, Cash_Exist: t.checkData.Cash_Exist, Is_Abnormal: t.checkData.Is_Abnormal });
@@ -571,11 +480,13 @@
             this.prepareReportData(this.checkedDate);
           }
         },
+        
         async viewHistoryDetail(date) {
           document.getElementById('closeHistoryBtn').click();
           this.loading = true; this.checkedDate = date;
           await this.prepareReportData(date);
         },
+        
         async prepareReportData(date) {
           this.reportSummary = await this.callAPI({ action: 'getReport', date: date, amLogin: this.amCode });
           this.detailData = await this.callAPI({ action: 'getHistoryDetail', date: date, amCode: this.amCode }) || [];

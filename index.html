@@ -36,7 +36,7 @@
     .form-select-sm, .form-control { border-radius: 6px; border-color: #ced4da; }
     .form-select-sm:focus, .form-control:focus { border-color: #86b7fe; box-shadow: 0 0 0 0.25rem rgba(13,110,253,0.25); }
     
-    /* แต่งตาราง Report ให้สวยงาม */
+    /* แต่งตาราง Report ให้สวยงามและสัดส่วนคงที่ */
     .report-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; background-color: #fff; table-layout: fixed; }
     .report-table thead th { 
       background-color: #d6eaff !important; 
@@ -67,65 +67,45 @@
           <p class="text-muted small">ระบบตรวจสอบรายการผิดปกติ</p>
         </div>
         <div class="p-4 pt-2">
-          <label class="form-label text-secondary small fw-bold mb-1">รหัสผู้ตรวจสอบ</label>
-          <input type="text" class="form-control form-control-lg fs-6 mb-4 bg-light" v-model="loginCode" placeholder="เช่น AM503 หรือ DD01" @keyup.enter="loadSummary">
+          <label class="form-label text-secondary small fw-bold mb-1">AreaCode ผู้ตรวจสอบ</label>
+          <input type="text" class="form-control form-control-lg fs-6 mb-4 bg-light" v-model="amCode" placeholder="ระบุ AreaCode เช่น AM503" @keyup.enter="loadSummary">
           <button class="btn btn-primary w-100 py-2" @click="loadSummary">
             เข้าสู่ระบบ
           </button>
+          <div class="text-center mt-4">
+            <a href="#" class="text-muted small text-decoration-none" data-bs-toggle="offcanvas" data-bs-target="#sidebarAdmin">
+              <i class="fa-solid fa-gear me-1"></i> โหมดผู้ดูแลระบบ
+            </a>
+          </div>
         </div>
       </div>
     </div>
 
     <div v-else class="app-wrapper">
       <nav class="navbar mb-4 px-3 d-flex justify-content-between sticky-top">
-        <span class="navbar-brand mb-0 h6 text-primary fw-bold" :class="{'mx-auto': page === 'dd-home'}">
-          <i class="fa-solid fa-shield-check me-1"></i> Cenpay Alert
-        </span>
-        <button v-if="page !== 'dd-home'" class="btn btn-primary btn-sm px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarHistory">
+        <button class="btn btn-outline-secondary btn-sm px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarAdmin">
+          <i class="fa-solid fa-gear text-dark me-1"></i> Admin
+        </button>
+        <span class="navbar-brand mb-0 h6 text-primary fw-bold mx-auto"><i class="fa-solid fa-shield-check me-1"></i> Cenpay Alert</span>
+        <button class="btn btn-primary btn-sm px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarHistory">
           <i class="fa-solid fa-clock-rotate-left me-1"></i> ประวัติ
         </button>
       </nav>
 
       <div class="container pb-5">
         
-        <div v-if="page === 'dd-home'" class="row justify-content-center">
-          <div class="col-md-8 col-sm-12">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-users text-primary me-2"></i>เลือกพื้นที่ ({{loginCode}})</h5>
-              <button class="btn btn-outline-danger btn-sm" @click="logout">ออกจากระบบ</button>
-            </div>
-            
-            <div class="card p-0 overflow-hidden border-0 shadow-sm">
-              <div v-if="loading" class="text-center py-5"><div class="spinner-border text-primary border-2"></div></div>
-              <ul class="list-group list-group-flush" v-else>
-                <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3" v-for="item in amList" :key="item.amCode">
-                  <span class="fw-bold fs-6 text-dark"><i class="fa-solid fa-user-tie text-secondary me-2"></i>{{ item.amCode }}</span>
-                  <span>
-                    <span class="badge bg-danger rounded-pill me-3 fs-6 px-3 fw-normal">{{ item.count }} Txn</span>
-                    <button class="btn btn-primary btn-sm px-4" @click="selectAM(item.amCode)">ตรวจสอบ</button>
-                  </span>
-                </li>
-                <li class="list-group-item text-center text-muted py-5 bg-light" v-if="amList.length === 0">
-                  <i class="fa-solid fa-circle-check fs-1 text-success mb-3 d-block"></i>
-                  ไม่มีรายการรอตรวจสอบในเขตของคุณ เยี่ยมมาก!
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
         <div v-if="page === 'home'" class="row justify-content-center">
           <div class="col-md-8 col-sm-12">
             <div class="d-flex justify-content-between align-items-center mb-3">
               <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-list-check text-primary me-2"></i>รายการรอตรวจสอบ ({{amCode}})</h5>
-              <button class="btn btn-outline-secondary btn-sm" @click="goBack">ย้อนกลับ</button>
+              <button class="btn btn-outline-danger btn-sm" @click="page = 'login'">ออกจากระบบ</button>
             </div>
             
             <div class="card p-0 overflow-hidden border-0 shadow-sm">
               <div v-if="loading" class="text-center py-5"><div class="spinner-border text-primary border-2"></div></div>
               <ul class="list-group list-group-flush" v-else>
                 <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3" v-for="item in summaryList" :key="item.date">
-                  <span class="fw-bold fs-6 text-dark"><i class="fa-regular fa-calendar text-secondary me-2"></i>{{ formatDateMMDDYY(item.date) }}</span>
+                  <span class="fw-bold fs-6 text-dark"><i class="fa-regular fa-calendar text-secondary me-2"></i>{{ formatShortDate(item.date) }}</span>
                   <span>
                     <span class="badge bg-danger rounded-pill me-3 fs-6 px-3 fw-normal">{{ item.count }} Txn</span>
                     <button class="btn btn-primary btn-sm px-4" @click="startChecking(item.date)">ตรวจสอบ</button>
@@ -150,7 +130,7 @@
                   <span class="badge bg-white text-primary border border-primary fw-normal">สาขาที่ {{ currentStoreIndex + 1 }} / {{ stores.length }}</span>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-2">
-                  <span class="text-dark fw-bold small"><i class="fa-regular fa-calendar me-1"></i> วันที่: {{ formatDateMMDDYY(checkedDate) }}</span>
+                  <span class="text-dark fw-bold small"><i class="fa-regular fa-calendar me-1"></i> วันที่: {{ formatShortDate(checkedDate) }}</span>
                   <span class="badge bg-danger fs-6 px-3 py-1 rounded-pill fw-normal">{{ currentStore.transactions.length }} Txn</span>
                 </div>
               </div>
@@ -222,7 +202,7 @@
               <div class="bg-white p-4 rounded shadow-sm border mb-4 text-start mx-auto" style="font-size: 1.05rem; line-height: 1.8; max-width: 600px;">
                 AM: <strong>{{ amCode }}</strong><br>
                 สรุปการตรวจสอบ Cenpay Alert<br>
-                วันที่: <strong>{{ formatDateMMDDYY(checkedDate) }}</strong><br>
+                วันที่: <strong>{{ formatShortDate(checkedDate) }}</strong><br>
                 จำนวนรวม = <strong>{{ formatAmount(reportSummary.totalTxn) }}</strong> Txn<br>
                 จำนวนบัญชีปลายทางที่ผิดปกติ = <strong class="text-danger">{{ formatAmount(reportSummary.abnormalCount) }}</strong> Txn<br>
                 บัญชีรับโอนเป็นพนักงานสาขา = <strong class="text-primary">{{ formatAmount(reportSummary.employeeCount) }}</strong> Txn
@@ -260,7 +240,7 @@
                     <tbody>
                       <tr v-for="(item, index) in detailData" :key="index">
                         <td class="text-center">{{ index + 1 }}</td>
-                        <td class="text-center">{{ formatDateMMDDYY(item.date) }}</td>
+                        <td class="text-center">{{ formatShortDate(item.date) }}</td>
                         <td class="text-center">{{ item.StoreCode }}</td>
                         <td class="text-start">{{ item.StoreNameE }}</td>
                         <td class="text-start">{{ item.Ref1 }}</td>
@@ -282,7 +262,7 @@
               </div>
               
               <div class="text-center pb-4">
-                <button class="btn btn-outline-secondary py-2 px-5 text-dark" @click="selectAM(amCode)">
+                <button class="btn btn-outline-secondary py-2 px-5 text-dark" @click="page = 'home'; loadSummary()">
                   <i class="fa-solid fa-house me-2"></i>กลับหน้าหลัก
                 </button>
               </div>
@@ -293,13 +273,39 @@
       </div>
     </div>
 
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarAdmin">
+      <div class="offcanvas-header bg-dark text-white">
+        <h6 class="offcanvas-title mb-0"><i class="fa-solid fa-gear me-2"></i>ผู้ดูแลระบบ</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+      </div>
+      <div class="offcanvas-body">
+        <div v-if="!isAdminLogged">
+          <label class="form-label text-muted small fw-bold">รหัสผ่านแอดมิน</label>
+          <input type="password" class="form-control mb-3 bg-light" v-model="adminPass">
+          <button class="btn btn-dark w-100" @click="loginAdmin">เข้าสู่ระบบ</button>
+        </div>
+        <div v-else>
+          <div class="alert alert-success small border-0"><i class="fa-solid fa-clock me-2"></i>อัปโหลดล่าสุด: <br><strong>{{ lastUploadTime }}</strong></div>
+          <hr>
+          <h6 class="fw-bold text-primary mb-2"><i class="fa-solid fa-file-excel me-2"></i>อัปโหลดไฟล์ Excel (.xlsx)</h6>
+          <p class="small text-muted mb-3">* ระบบจะอ่านข้อมูลเฉพาะจากชีตชื่อ <b>RAW</b></p>
+          <input type="file" class="form-control mb-3" accept=".xlsx, .xls" @change="handleFileUpload">
+          <button class="btn btn-primary w-100 mb-3" @click="uploadExcelData" :disabled="uploading">
+            <span v-if="uploading" class="spinner-border spinner-border-sm me-2 border-2"></span>
+            {{ uploading ? 'กำลังดำเนินการ...' : 'อัปโหลดและต่อท้ายข้อมูล' }}
+          </button>
+          <button class="btn btn-outline-danger w-100" @click="isAdminLogged = false">ออกจากโหมดแอดมิน</button>
+        </div>
+      </div>
+    </div>
+
     <div class="offcanvas offcanvas-end" tabindex="-1" id="sidebarHistory">
       <div class="offcanvas-header bg-primary text-white">
         <h6 class="offcanvas-title mb-0"><i class="fa-solid fa-clock-rotate-left me-2"></i>ประวัติการตรวจสอบ</h6>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" id="closeHistoryBtn"></button>
       </div>
       <div class="offcanvas-body bg-light p-3">
-        <h6 class="text-dark fw-bold mb-3 pb-2 border-bottom"><i class="fa-solid fa-user me-2 text-muted"></i>พื้นที่ตรวจสอบ: {{ amCode }}</h6>
+        <h6 class="text-dark fw-bold mb-3 pb-2 border-bottom"><i class="fa-solid fa-user me-2 text-muted"></i>AM: {{ amCode }}</h6>
         <div class="text-center mt-5" v-if="loadingHistory">
           <div class="spinner-border text-primary border-2"></div>
         </div>
@@ -310,7 +316,7 @@
           <div class="card mb-3 border-0 shadow-sm" v-for="h in historyList" :key="h.date">
             <div class="card-body p-3">
               <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="fw-bold text-dark"><i class="fa-regular fa-calendar me-2 text-primary"></i>{{ formatDateMMDDYY(h.date) }}</span>
+                <span class="fw-bold text-dark"><i class="fa-regular fa-calendar me-2 text-primary"></i>{{ formatShortDate(h.date) }}</span>
                 <span class="badge bg-success px-2 fw-normal">{{ h.total }} Txn</span>
               </div>
               <div class="text-danger small mb-3 fw-bold bg-danger bg-opacity-10 p-1 rounded px-2" v-if="h.abnormal > 0">
@@ -333,15 +339,17 @@
       el: '#app',
       data: {
         page: 'login',
-        loginCode: '', 
         amCode: '', 
         loading: false, loadingHistory: false,
-        amList: [],
         summaryList: [], historyList: [],
         stores: [], currentStoreIndex: 0,
         checkedResults: [], checkedDate: '',
         reportSummary: { totalTxn: 0, abnormalCount: 0, employeeCount: 0 },
-        detailData: []
+        detailData: [], 
+        
+        isAdminLogged: false, adminPass: '',
+        uploadFile: null, uploading: false,
+        lastUploadTime: 'กำลังดึงข้อมูล...'
       },
       computed: {
         currentStore() { return this.stores[this.currentStoreIndex] || { transactions: [] }; },
@@ -350,24 +358,28 @@
           return this.currentStore.transactions.every(t => t.checkData.Type !== '' && t.checkData.Cash_Exist !== '' && t.checkData.Is_Abnormal !== '');
         }
       },
+      mounted() { this.fetchLastUploadTime(); },
       methods: {
         formatAmount(val) {
           if (!val) return '0';
           return Number(val).toLocaleString('th-TH');
         },
-        formatDateMMDDYY(val) {
+        
+        // 🌟 แปลงรูปแบบวันที่เป็น dd/mm/yy เสมอ 🌟
+        formatShortDate(val) {
           if (!val) return '';
           let str = val.toString();
           let parts = str.split('/');
           if (parts.length === 3) {
-            let day = parts[0].padStart(2, '0');
-            let month = parts[1].padStart(2, '0');
-            let year = parts[2];
-            if (year.length === 4) { year = year.slice(-2); }
-            return `${month}/${day}/${year}`;
+            let p1 = parts[0].padStart(2, '0');
+            let p2 = parts[1].padStart(2, '0');
+            let p3 = parts[2];
+            if (p3.length === 4) { p3 = p3.slice(-2); }
+            return `${p1}/${p2}/${p3}`;
           }
           return str;
         },
+        
         similarity(s1, s2) {
           let longer = s1; let shorter = s2;
           if (s1.length < s2.length) { longer = s2; shorter = s1; }
@@ -396,6 +408,7 @@
           }
           return costs[s2.length];
         },
+
         async callAPI(payload) {
           try {
             const response = await fetch(API_URL, {
@@ -410,59 +423,82 @@
             alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + e.message); return null;
           }
         },
-        
-        logout() {
-          this.loginCode = '';
-          this.amCode = '';
-          this.page = 'login';
-        },
 
-        goBack() {
-          if (this.loginCode.startsWith('DD')) {
-            this.page = 'dd-home';
-            this.loadSummary();
-          } else {
-            this.logout();
-          }
+        loginAdmin() {
+          if(this.adminPass === 'admin1234') { 
+            this.isAdminLogged = true; this.adminPass = '';
+          } else { alert('รหัสผ่านไม่ถูกต้อง'); }
+        },
+        async fetchLastUploadTime() {
+          const res = await this.callAPI({ action: 'getLastUpload' });
+          if(res) this.lastUploadTime = res;
+        },
+        handleFileUpload(event) { this.uploadFile = event.target.files[0]; },
+        
+        async uploadExcelData() {
+          if(!this.uploadFile) return alert('กรุณาเลือกไฟล์ .xlsx ก่อนครับ');
+          this.uploading = true;
+          
+          const reader = new FileReader();
+          reader.onload = async (e) => {
+            try {
+              const data = new Uint8Array(e.target.result);
+              const workbook = XLSX.read(data, {type: 'array'});
+              
+              let targetSheetName = workbook.SheetNames.find(s => s.trim().toUpperCase() === 'RAW');
+              if(!targetSheetName) targetSheetName = workbook.SheetNames[0];
+
+              const worksheet = workbook.Sheets[targetSheetName];
+              const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: "", raw: false});
+              
+              if(jsonData.length > 0) {
+                let maxCols = 0;
+                jsonData.forEach(row => { if(row.length > maxCols) maxCols = row.length; });
+                
+                const finalData = jsonData.map(row => {
+                  let newRow = [];
+                  for(let i = 0; i < maxCols; i++) {
+                    newRow.push(row[i] !== undefined ? row[i].toString().trim() : "");
+                  }
+                  return newRow;
+                });
+                
+                const cleanData = finalData.filter(row => row.join("") !== "");
+                const newTime = await this.callAPI({ action: 'uploadExcelDirect', arrayData: cleanData });
+                
+                if(newTime && !newTime.includes("Error")) {
+                  this.lastUploadTime = newTime;
+                  alert('✅ อัปโหลดและเพิ่มข้อมูลสำเร็จ!');
+                  document.querySelector('input[type="file"]').value = ''; 
+                } else { 
+                  alert('❌ เกิดข้อผิดพลาด: ' + newTime); 
+                }
+              } else { alert("⚠️ ไม่พบข้อมูลในแผ่นงาน"); }
+            } catch (err) { alert("❌ เกิดข้อผิดพลาด: " + err.message); }
+            this.uploading = false;
+            this.uploadFile = null;
+          };
+          reader.onerror = () => { alert("❌ ไม่สามารถอ่านไฟล์ได้"); this.uploading = false; };
+          reader.readAsArrayBuffer(this.uploadFile);
         },
 
         async loadSummary() {
-          if(!this.loginCode) { alert('กรุณาระบุรหัสผู้ตรวจสอบ'); return; }
-          this.loginCode = this.loginCode.toUpperCase().replace(/\s/g, ''); 
-          
-          this.loading = true;
-          if (this.loginCode.startsWith('DD')) {
-            this.page = 'dd-home';
-            this.amList = await this.callAPI({ action: 'getDDSummary', ddCode: this.loginCode }) || [];
-          } else {
-            this.amCode = this.loginCode;
-            this.page = 'home';
-            this.summaryList = await this.callAPI({ action: 'getSummary', amCode: this.amCode }) || [];
-            this.fetchHistory();
-          }
-          this.loading = false;
-        },
-
-        async selectAM(am) {
-          this.amCode = am;
-          this.loading = true;
-          this.page = 'home';
-          this.summaryList = await this.callAPI({ action: 'getSummary', amCode: this.amCode }) || [];
+          if(!this.amCode) { alert('กรุณาระบุ AreaCode'); return; }
+          this.amCode = this.amCode.toUpperCase().replace(/\s/g, ''); 
+          this.loading = true; this.page = 'home';
           this.fetchHistory();
+          this.summaryList = await this.callAPI({ action: 'getSummary', amCode: this.amCode }) || [];
           this.loading = false;
         },
-
         async fetchHistory() {
           this.loadingHistory = true;
           this.historyList = await this.callAPI({ action: 'getHistory', amCode: this.amCode }) || [];
           this.loadingHistory = false;
         },
-        
         cleanName(fullName) {
           if(!fullName) return "";
           return fullName.replace(/^(นาย|นาง|นางสาว|น\.ส\.|ด\.ช\.|ด\.ญ\.|Mr\.|Mrs\.|Miss|Ms\.)\s*/i, '').trim().split(" ")[0]; 
         },
-
         async startChecking(date) {
           this.loading = true; this.checkedDate = date;
           const txns = await this.callAPI({ action: 'getTransactions', date: date, amCode: this.amCode }) || [];
@@ -497,7 +533,6 @@
           this.currentStoreIndex = 0; this.checkedResults = [];
           this.page = 'checking'; this.loading = false;
         },
-
         async nextStore() {
           this.currentStore.transactions.forEach(t => {
             this.checkedResults.push({ ...t, Type: t.checkData.Type, Cash_Exist: t.checkData.Cash_Exist, Is_Abnormal: t.checkData.Is_Abnormal });
@@ -512,13 +547,11 @@
             this.prepareReportData(this.checkedDate);
           }
         },
-
         async viewHistoryDetail(date) {
           document.getElementById('closeHistoryBtn').click();
           this.loading = true; this.checkedDate = date;
           await this.prepareReportData(date);
         },
-
         async prepareReportData(date) {
           this.reportSummary = await this.callAPI({ action: 'getReport', date: date, amLogin: this.amCode });
           this.detailData = await this.callAPI({ action: 'getHistoryDetail', date: date, amCode: this.amCode }) || [];
@@ -566,7 +599,7 @@
         },
 
         copyReportMobile(showAlert = true) {
-          const textToCopy = `AM: ${this.amCode}\nสรุปการตรวจสอบ Cenpay Alert\nวันที่: ${this.formatDateMMDDYY(this.checkedDate)}\nจำนวนรวม = ${this.formatAmount(this.reportSummary.totalTxn)} Txn\nจำนวนบัญชีปลายทางที่ผิดปกติ = ${this.formatAmount(this.reportSummary.abnormalCount)} Txn\nบัญชีรับโอนเป็นพนักงานสาขา = ${this.formatAmount(this.reportSummary.employeeCount)} Txn`;
+          const textToCopy = `AM: ${this.amCode}\nสรุปการตรวจสอบ Cenpay Alert\nวันที่: ${this.formatShortDate(this.checkedDate)}\nจำนวนรวม = ${this.formatAmount(this.reportSummary.totalTxn)} Txn\nจำนวนบัญชีปลายทางที่ผิดปกติ = ${this.formatAmount(this.reportSummary.abnormalCount)} Txn\nบัญชีรับโอนเป็นพนักงานสาขา = ${this.formatAmount(this.reportSummary.employeeCount)} Txn`;
           
           const textArea = document.createElement("textarea");
           textArea.value = textToCopy;
@@ -607,14 +640,14 @@
             let abnormalStatus = row.Is_Abnormal === 'ใช่' ? 'ผิดปกติ' : 'ไม่ผิดปกติ';
             
             excelData.push([
-              row.DM || this.loginCode,
+              row.DM || this.amCode,
               row.StoreCode,
               row.StoreNameE,
               row.Ref1,
               row.Amount, 
               row.Txn,
               row.BillType,
-              row.date ? this.formatDateMMDDYY(row.date) : this.formatDateMMDDYY(this.checkedDate),
+              row.date ? this.formatShortDate(row.date) : this.formatShortDate(this.checkedDate),
               row.Type,
               cashStatus,
               abnormalStatus

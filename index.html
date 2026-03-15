@@ -67,12 +67,21 @@
           <p class="text-muted small">ระบบตรวจสอบรายการผิดปกติ</p>
         </div>
         <div class="p-4 pt-2">
-          <label class="form-label text-secondary small fw-bold mb-1">AreaCode ผู้ตรวจสอบ</label>
-          <input type="text" class="form-control form-control-lg fs-6 mb-4 bg-light" v-model="amCode" placeholder="ระบุ AreaCode เช่น AM503" @keyup.enter="loadSummary">
-          <button class="btn btn-primary w-100 py-2" @click="loadSummary">
-            เข้าสู่ระบบ
+          <label class="form-label text-secondary small fw-bold mb-1">เลือกรหัสผู้ตรวจสอบ (AM Code)</label>
+          
+          <div class="mb-4">
+            <select class="form-select form-select-lg fs-6 bg-light text-center fw-bold text-primary shadow-sm" v-model="amCode" :disabled="isFetchingAMs" @change="loadSummary">
+              <option value="" disabled>{{ isFetchingAMs ? 'กำลังดึงข้อมูลรายชื่อ...' : '-- กรุณาเลือกพื้นที่ (AM) --' }}</option>
+              <option v-for="am in amList" :key="am" :value="am">{{ am }}</option>
+            </select>
+          </div>
+          
+          <button class="btn btn-primary w-100 py-2 fw-bold shadow-sm" @click="loadSummary" :disabled="!amCode || isFetchingAMs">
+            <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
+            เข้าสู่ระบบ <i class="fa-solid fa-arrow-right ms-1"></i>
           </button>
-          <div class="text-center mt-4">
+
+          <div class="text-center mt-3">
             <a href="#" class="text-muted small text-decoration-none" data-bs-toggle="offcanvas" data-bs-target="#sidebarAdmin">
               <i class="fa-solid fa-gear me-1"></i> โหมดผู้ดูแลระบบ
             </a>
@@ -83,10 +92,7 @@
 
     <div v-else class="app-wrapper">
       <nav class="navbar mb-4 px-3 d-flex justify-content-between sticky-top">
-        <button class="btn btn-outline-secondary btn-sm px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarAdmin">
-          <i class="fa-solid fa-gear text-dark me-1"></i> Admin
-        </button>
-        <span class="navbar-brand mb-0 h6 text-primary fw-bold mx-auto"><i class="fa-solid fa-shield-check me-1"></i> Cenpay Alert</span>
+        <span class="navbar-brand mb-0 h6 text-primary fw-bold"><i class="fa-solid fa-shield-check me-1"></i> Cenpay Alert</span>
         <button class="btn btn-primary btn-sm px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarHistory">
           <i class="fa-solid fa-clock-rotate-left me-1"></i> ประวัติ
         </button>
@@ -288,7 +294,7 @@
           <div class="alert alert-success small border-0"><i class="fa-solid fa-clock me-2"></i>อัปโหลดล่าสุด: <br><strong>{{ lastUploadTime }}</strong></div>
           <hr>
           <h6 class="fw-bold text-primary mb-2"><i class="fa-solid fa-file-excel me-2"></i>อัปโหลดไฟล์ Excel (.xlsx)</h6>
-          <p class="small text-muted mb-3">* ระบบจะอ่านข้อมูลเฉพาะจากชีตชื่อ <b>RAW</b></p>
+          <p class="small text-muted mb-3">* ระบบสามารถดึงไฟล์จากอีเมลได้อัตโนมัติแล้ว หรือคุณสามารถอัปโหลดเองได้ที่นี่</p>
           <input type="file" class="form-control mb-3" accept=".xlsx, .xls" @change="handleFileUpload">
           <button class="btn btn-primary w-100 mb-3" @click="uploadExcelData" :disabled="uploading">
             <span v-if="uploading" class="spinner-border spinner-border-sm me-2 border-2"></span>
@@ -340,6 +346,8 @@
       data: {
         page: 'login',
         amCode: '', 
+        amList: [],
+        isFetchingAMs: true,
         loading: false, loadingHistory: false,
         summaryList: [], historyList: [],
         stores: [], currentStoreIndex: 0,
@@ -358,22 +366,38 @@
           return this.currentStore.transactions.every(t => t.checkData.Type !== '' && t.checkData.Cash_Exist !== '' && t.checkData.Is_Abnormal !== '');
         }
       },
-      mounted() { this.fetchLastUploadTime(); },
+      mounted() { 
+        this.fetchLastUploadTime(); 
+        this.fetchAMList();
+      },
       methods: {
+        // 🌟 ดึงรายชื่อ AM อัตโนมัติตอนเปิดเว็บ
+        async fetchAMList() {
+          this.isFetchingAMs = true;
+          const list = await this.callAPI({ action: 'getAMList' });
+          if (list && list.length > 0) {
+            this.amList = list;
+          } else {
+            // สำรองเผื่อข้อมูลว่าง
+            this.amList = ['AM501', 'AM502', 'AM503', 'AM504', 'AM505'];
+          }
+          this.isFetchingAMs = false;
+        },
+
         formatAmount(val) {
           if (!val) return '0';
           return Number(val).toLocaleString('th-TH');
         },
         
-        // 🌟 แปลงรูปแบบวันที่เป็น dd/mm/yy เสมอ 🌟
+        // แปลงรูปแบบวันที่เป็น dd/mm/yy ตลอดระบบ
         formatShortDate(val) {
           if (!val) return '';
           let str = val.toString();
           let parts = str.split('/');
           if (parts.length === 3) {
-            let p1 = parts[0].padStart(2, '0');
-            let p2 = parts[1].padStart(2, '0');
-            let p3 = parts[2];
+            let p1 = parts[0].padStart(2, '0'); // วัน
+            let p2 = parts[1].padStart(2, '0'); // เดือน
+            let p3 = parts[2]; // ปี
             if (p3.length === 4) { p3 = p3.slice(-2); }
             return `${p1}/${p2}/${p3}`;
           }
@@ -483,8 +507,8 @@
         },
 
         async loadSummary() {
-          if(!this.amCode) { alert('กรุณาระบุ AreaCode'); return; }
-          this.amCode = this.amCode.toUpperCase().replace(/\s/g, ''); 
+          if(!this.amCode) { return; } // ถ้ายังไม่เลือก AM ให้ไม่ทำงาน
+          
           this.loading = true; this.page = 'home';
           this.fetchHistory();
           this.summaryList = await this.callAPI({ action: 'getSummary', amCode: this.amCode }) || [];

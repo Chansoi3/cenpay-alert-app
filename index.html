@@ -54,6 +54,20 @@
       word-wrap: break-word; 
     }
     .report-table tbody tr:nth-child(even) { background-color: #f8f9fa; } 
+
+    /* อนิเมชั่นกระพริบตัวหนังสือ */
+    @keyframes blinker {
+      50% { opacity: 0; }
+    }
+    .blink-text {
+      animation: blinker 1s linear infinite;
+    }
+    /* บังคับสีแดงเมื่อ Input ถูกล็อค */
+    input:disabled.text-danger {
+      background-color: #f8f9fa;
+      color: #dc3545 !important;
+      -webkit-text-fill-color: #dc3545;
+    }
   </style>
 </head>
 <body>
@@ -68,14 +82,12 @@
         </div>
         <div class="p-4 pt-2">
           <label class="form-label text-secondary small fw-bold mb-1">เลือกรหัสผู้ตรวจสอบ (AM Code)</label>
-          
           <div class="mb-4">
             <select class="form-select form-select-lg fs-6 bg-light text-center fw-bold text-primary shadow-sm" v-model="amCode" :disabled="isFetchingAMs" @change="loadSummary">
               <option value="" disabled>{{ isFetchingAMs ? 'กำลังดึงข้อมูลรายชื่อ...' : '-เลือกพื้นที่(AM)-' }}</option>
               <option v-for="am in amList" :key="am" :value="am">{{ am }}</option>
             </select>
           </div>
-          
           <button class="btn btn-primary w-100 py-2 fw-bold shadow-sm" @click="loadSummary" :disabled="!amCode || isFetchingAMs">
             <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
             เข้าสู่ระบบ <i class="fa-solid fa-arrow-right ms-1"></i>
@@ -153,6 +165,38 @@
                   </div>
                 </div>
                 
+                <div class="row g-2 bg-white p-3 rounded border mb-3 shadow-sm border-danger border-opacity-25">
+                  <div class="col-12 mb-1"><span class="badge bg-danger text-white"><i class="fa-solid fa-id-card me-1"></i> ข้อมูลพนักงานปลายทาง</span></div>
+                  <div class="col-12 col-md-3">
+                    <label class="form-label small mb-1 text-secondary fw-bold">Receiver Emp ID</label>
+                    <input type="text" class="form-control form-control-sm"
+                           :class="{'text-danger fw-bold': txn.originalData.Receiver_Emp_ID}"
+                           :disabled="!!txn.originalData.Receiver_Emp_ID"
+                           v-model="txn.checkData.Receiver_Emp_ID">
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <label class="form-label small mb-1 text-secondary fw-bold">Depositor Emp ID</label>
+                    <input type="text" class="form-control form-control-sm"
+                           :class="{'text-danger fw-bold': txn.originalData.Depositor_Emp_ID}"
+                           :disabled="!!txn.originalData.Depositor_Emp_ID"
+                           v-model="txn.checkData.Depositor_Emp_ID">
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <label class="form-label small mb-1 text-secondary fw-bold">Depositor Name</label>
+                    <input type="text" class="form-control form-control-sm"
+                           :class="{'blink-text text-danger fw-bold': txn.originalData.Depositor_Name, 'text-danger fw-bold': txn.originalData.Depositor_Name}"
+                           :disabled="!!txn.originalData.Depositor_Name"
+                           v-model="txn.checkData.Depositor_Name">
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <label class="form-label small mb-1 text-secondary fw-bold">Depositor Position</label>
+                    <input type="text" class="form-control form-control-sm"
+                           :class="{'text-danger fw-bold': txn.originalData.Depositor_Position}"
+                           :disabled="!!txn.originalData.Depositor_Position"
+                           v-model="txn.checkData.Depositor_Position">
+                  </div>
+                </div>
+
                 <div class="row g-2 bg-light p-2 rounded border">
                   <div class="col-12 col-md-4">
                     <label class="form-label small mb-1 text-secondary fw-bold">ประเภทบัญชี</label>
@@ -221,20 +265,24 @@
               </div>
 
               <div class="mb-4" style="overflow-x: auto;">
-                <div id="reportCapture" class="bg-white shadow-sm" style="padding: 20px; width: 1150px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                <div id="reportCapture" class="bg-white shadow-sm" style="padding: 20px; width: 1600px; border: 1px solid #e0e0e0; border-radius: 8px;">
                   <table class="report-table">
                     <thead>
                       <tr>
-                        <th style="width: 4%;">ลำดับ</th>
-                        <th style="width: 8%;">วันที่</th>
-                        <th style="width: 6%;">รหัส<br>สาขา</th>
-                        <th style="width: 15%;">ชื่อสาขา</th>
-                        <th style="width: 15%;">ชื่อบัญชีปลายทาง</th>
-                        <th style="width: 9%;">จำนวน<br>เงิน</th>
-                        <th style="width: 10%;">ประเภท<br>ธนาคาร</th>
-                        <th style="width: 10%;">ประเภท<br>(พนักงาน/ลูกค้า)</th>
-                        <th style="width: 11%;">มีเงินสดจริงหรือไม่<br>(มี/ไม่มี)</th>
-                        <th style="width: 12%;">พบความผิดปกติ<br>(ปกติ/ผิดปกติ)</th>
+                        <th style="width: 3%;">ลำดับ</th>
+                        <th style="width: 6%;">วันที่</th>
+                        <th style="width: 5%;">รหัส<br>สาขา</th>
+                        <th style="width: 10%;">ชื่อสาขา</th>
+                        <th style="width: 10%;">ชื่อบัญชีปลายทาง</th>
+                        <th style="width: 6%;">จำนวน<br>เงิน</th>
+                        <th style="width: 6%;">ประเภท<br>ธนาคาร</th>
+                        <th style="width: 7%;">ประเภท<br>(พนักงาน/ลูกค้า)</th>
+                        <th style="width: 7%;">มีเงินสดจริงหรือไม่</th>
+                        <th style="width: 7%;">พบความผิดปกติ</th>
+                        <th style="width: 8%;">Receiver<br>Emp ID</th>
+                        <th style="width: 8%;">Depositor<br>Emp ID</th>
+                        <th style="width: 10%;">Depositor Name</th>
+                        <th style="width: 7%;">Depositor<br>Position</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -252,9 +300,13 @@
                           <span v-if="item.Is_Abnormal === 'ใช่'" style="background-color: #dc3545; color: white; padding: 4px 14px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; display: inline-block; width: 80px;">ผิดปกติ</span>
                           <span v-else style="background-color: #198754; color: white; padding: 4px 14px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; display: inline-block; width: 80px;">ปกติ</span>
                         </td>
+                        <td class="text-center" :class="{'text-danger fw-bold': item.Receiver_Emp_ID}">{{ item.Receiver_Emp_ID }}</td>
+                        <td class="text-center" :class="{'text-danger fw-bold': item.Depositor_Emp_ID}">{{ item.Depositor_Emp_ID }}</td>
+                        <td class="text-start" :class="{'blink-text text-danger fw-bold': item.Depositor_Name}">{{ item.Depositor_Name }}</td>
+                        <td class="text-start" :class="{'text-danger fw-bold': item.Depositor_Position}">{{ item.Depositor_Position }}</td>
                       </tr>
                       <tr v-if="detailData.length === 0">
-                        <td colspan="10" class="text-muted text-center py-4">ไม่พบข้อมูล</td>
+                        <td colspan="14" class="text-muted text-center py-4">ไม่พบข้อมูล</td>
                       </tr>
                     </tbody>
                   </table>
@@ -306,7 +358,6 @@
   </div>
 
   <script>
-    // ⚠️ ลิงก์ API ของคุณ
     const API_URL = "https://script.google.com/macros/s/AKfycbyEBdGgAxPi1WM1cRyQcvQsQCARcd35ty-MwrW22ivV-YZCSXmnqQXswSfSLv9987ZRYQ/exec"; 
 
     new Vue({
@@ -334,12 +385,10 @@
         this.fetchAMList();
       },
       methods: {
-        // 🌟 ดึงรายชื่อ AM อัตโนมัติและกรอง AM_LOGIN ออกอีกชั้น 🌟
         async fetchAMList() {
           this.isFetchingAMs = true;
           const list = await this.callAPI({ action: 'getAMList' });
           if (list && list.length > 0) {
-            // กรองคำว่า AM_LOGIN หรือคำที่ไม่ใช่ออกให้ชัวร์ที่สุด
             this.amList = list.filter(am => am !== 'AM_LOGIN' && am !== 'AREACODE');
           } else {
             this.amList = [];
@@ -352,15 +401,14 @@
           return Number(val).toLocaleString('th-TH');
         },
         
-        // แปลงรูปแบบวันที่เป็น dd/mm/yy ตลอดระบบ
         formatShortDate(val) {
           if (!val) return '';
           let str = val.toString();
           let parts = str.split('/');
           if (parts.length === 3) {
-            let p1 = parts[0].padStart(2, '0'); // วัน
-            let p2 = parts[1].padStart(2, '0'); // เดือน
-            let p3 = parts[2]; // ปี
+            let p1 = parts[0].padStart(2, '0'); 
+            let p2 = parts[1].padStart(2, '0'); 
+            let p3 = parts[2]; 
             if (p3.length === 4) { p3 = p3.slice(-2); }
             return `${p1}/${p2}/${p3}`;
           }
@@ -412,7 +460,7 @@
         },
 
         async loadSummary() {
-          if(!this.amCode) { return; } // ถ้ายังไม่เลือก AM ให้ไม่ทำงาน
+          if(!this.amCode) { return; } 
           
           this.loading = true; this.page = 'home';
           this.fetchHistory();
@@ -443,7 +491,22 @@
             }
             t.cleanNameStr = this.cleanName(t.Ref1);
             t.isDuplicate = false; 
-            t.checkData = { Type: '', Cash_Exist: '', Is_Abnormal: '' };
+            
+            // เตรียม CheckData ของใหม่
+            t.checkData = { 
+              Type: '', Cash_Exist: '', Is_Abnormal: '',
+              Receiver_Emp_ID: t.Receiver_Emp_ID || '',
+              Depositor_Emp_ID: t.Depositor_Emp_ID || '',
+              Depositor_Name: t.Depositor_Name || '',
+              Depositor_Position: t.Depositor_Position || ''
+            };
+            // เก็บตัวต้นฉบับไว้เช็คว่าควร Lock หรือไม่
+            t.originalData = { 
+              Receiver_Emp_ID: t.Receiver_Emp_ID || '',
+              Depositor_Emp_ID: t.Depositor_Emp_ID || '',
+              Depositor_Name: t.Depositor_Name || '',
+              Depositor_Position: t.Depositor_Position || ''
+            };
             storeGroups[t.StoreCode].transactions.push(t);
           });
 
@@ -468,7 +531,16 @@
         
         async nextStore() {
           this.currentStore.transactions.forEach(t => {
-            this.checkedResults.push({ ...t, Type: t.checkData.Type, Cash_Exist: t.checkData.Cash_Exist, Is_Abnormal: t.checkData.Is_Abnormal });
+            this.checkedResults.push({ 
+              ...t, 
+              Type: t.checkData.Type, 
+              Cash_Exist: t.checkData.Cash_Exist, 
+              Is_Abnormal: t.checkData.Is_Abnormal,
+              Receiver_Emp_ID: t.checkData.Receiver_Emp_ID,
+              Depositor_Emp_ID: t.checkData.Depositor_Emp_ID,
+              Depositor_Name: t.checkData.Depositor_Name,
+              Depositor_Position: t.checkData.Depositor_Position
+            });
           });
 
           if (this.currentStoreIndex < this.stores.length - 1) {
@@ -502,7 +574,14 @@
           
           alert('ระบบได้คัดลอกข้อความสรุปผลให้แล้วครับ\n\nเมื่อกดเข้าแอป LINE ให้กดค้างที่ช่องพิมพ์ แล้วเลือก "วาง" (Paste) เพื่อส่งข้อความไปพร้อมกับรูปภาพได้เลยครับ');
 
+          // ทริคป้องกัน html2canvas จับภาพตอนตัวอักษรกำลังกระพริบ (opacity = 0)
+          const blinkEls = captureElement.querySelectorAll('.blink-text');
+          blinkEls.forEach(el => el.style.animation = 'none');
+
           html2canvas(captureElement, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => {
+            // คืนค่าอนิเมชั่นกระพริบกลับมา
+            blinkEls.forEach(el => el.style.animation = '');
+            
             const fileName = `Cenpay_Table_${this.amCode}_${this.checkedDate.replace(/\//g, '-')}.jpg`;
             
             canvas.toBlob((blob) => {
@@ -522,6 +601,8 @@
             }, 'image/jpeg', 1.0);
 
           }).catch(err => {
+            // คืนค่าอนิเมชั่นกระพริบกลับมาหาก error
+            blinkEls.forEach(el => el.style.animation = '');
             alert('เกิดข้อผิดพลาดในการสร้างรูปภาพ: ' + err.message);
           });
         },
@@ -564,10 +645,12 @@
           
           const excelData = [];
           
+          // อัปเดต Header ในไฟล์ Excel
           excelData.push([
             "DM", "StoreCode", "StoreNameE", "Ref1", 
             "Amount", "Txn", "BillType", "date", 
-            "เป็นพนักงาน/ลูกค้า", "มีเงินสดจริงหรือไม่", "มีความผิดปกติหรือไม่"
+            "เป็นพนักงาน/ลูกค้า", "มีเงินสดจริงหรือไม่", "มีความผิดปกติหรือไม่",
+            "Receiver Employee ID", "Depositor Employee ID", "Depositor Name", "Depositor Position"
           ]);
           
           this.detailData.forEach(row => {
@@ -585,7 +668,11 @@
               row.date ? this.formatShortDate(row.date) : this.formatShortDate(this.checkedDate),
               row.Type,
               cashStatus,
-              abnormalStatus
+              abnormalStatus,
+              row.Receiver_Emp_ID,
+              row.Depositor_Emp_ID,
+              row.Depositor_Name,
+              row.Depositor_Position
             ]);
           });
 

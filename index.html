@@ -55,7 +55,17 @@
       border: 2px solid #dc3545;
     }
     
-    .report-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; background-color: #fff; table-layout: fixed; }
+    /* แต่งตาราง Report ให้สวยงามและปรับความคมชัดของตัวหนังสือ */
+    .report-table { 
+      border-collapse: collapse; 
+      width: 100%; 
+      font-size: 0.85rem; 
+      background-color: #fff; 
+      table-layout: fixed; 
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
     .report-table thead th { 
       background-color: #d6eaff !important; color: #004085 !important; 
       text-align: center; vertical-align: middle; border: 1px solid #c2dbfe; font-weight: bold; padding: 12px 6px;
@@ -63,7 +73,7 @@
     .report-table tbody td { vertical-align: middle; border: 1px solid #e9ecef; padding: 10px 8px; word-wrap: break-word; }
     .report-table tbody tr:nth-child(even) { background-color: #f8f9fa; } 
 
-    /* อนิเมชั่นกระพริบตัวหนังสือ (เฉพาะใน Popup) */
+    /* อนิเมชั่นกระพริบตัวหนังสือ (เฉพาะใน Popup และ ตาราง Report) */
     @keyframes blinker { 50% { opacity: 0; } }
     .blink-text { animation: blinker 1s linear infinite; }
   </style>
@@ -265,7 +275,12 @@
                         <td class="text-start">{{ item.Ref1 }}</td>
                         <td class="text-end pe-3">{{ formatAmount(item.Amount) }}</td>
                         <td class="text-center">{{ item.BillType }}</td>
-                        <td class="text-center">{{ item.Type }}</td>
+                        
+                        <td class="text-center">
+                          <span v-if="item.Type === 'พนักงาน'" style="background-color: #fd7e14; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; display: inline-block;">พนักงาน</span>
+                          <span v-else>{{ item.Type }}</span>
+                        </td>
+                        
                         <td class="text-center">{{ item.Cash_Exist }}</td>
                         <td class="text-center">
                           <span v-if="item.Is_Abnormal === 'ใช่'" style="background-color: #dc3545; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; display: inline-block;">ผิดปกติ</span>
@@ -378,6 +393,7 @@
   </div>
 
   <script>
+    // ⚠️ ลิงก์ API ของคุณ (ยังใช้ตัวเดิมได้เลย)
     const API_URL = "https://script.google.com/macros/s/AKfycbyEBdGgAxPi1WM1cRyQcvQsQCARcd35ty-MwrW22ivV-YZCSXmnqQXswSfSLv9987ZRYQ/exec"; 
 
     new Vue({
@@ -392,8 +408,8 @@
         reportSummary: { totalTxn: 0, abnormalCount: 0, employeeCount: 0 },
         detailData: [],
         
-        empModal: null,      // ตัวแปรเก็บ Modal Object
-        selectedTxn: null    // รายการที่ถูกกดเปิด Modal
+        empModal: null,
+        selectedTxn: null
       },
       computed: {
         currentStore() { return this.stores[this.currentStoreIndex] || { transactions: [] }; },
@@ -404,7 +420,6 @@
       },
       mounted() { 
         this.fetchAMList();
-        // กำหนดค่าเริ่มต้นให้ Bootstrap Modal
         this.empModal = new bootstrap.Modal(document.getElementById('employeeModal'));
       },
       methods: {
@@ -500,7 +515,6 @@
             t.cleanNameStr = this.cleanName(t.Ref1);
             t.isDuplicate = false; 
             
-            // เช็คและล็อก Type พนักงานทันทีที่พบข้อมูล
             let autoEmployee = !!t.Depositor_Name;
             
             t.checkData = { 
@@ -510,7 +524,7 @@
               Depositor_Emp_ID: t.Depositor_Emp_ID || '',
               Depositor_Name: t.Depositor_Name || '',
               Depositor_Position: t.Depositor_Position || '',
-              Remark: '' // เพิ่มหมายเหตุ
+              Remark: ''
             };
             
             t.originalData = { 
@@ -592,23 +606,24 @@
           const blinkEls = captureElement.querySelectorAll('.blink-text');
           blinkEls.forEach(el => el.style.animation = 'none');
 
-          html2canvas(captureElement, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => {
+          // ปรับ scale เป็น 3 และใช้เป็น PNG
+          html2canvas(captureElement, { scale: 3, backgroundColor: '#ffffff', useCORS: true }).then(canvas => {
             blinkEls.forEach(el => el.style.animation = '');
-            const fileName = `Cenpay_Table_${this.amCode}_${this.checkedDate.replace(/\//g, '-')}.jpg`;
+            const fileName = `Cenpay_Table_${this.amCode}_${this.checkedDate.replace(/\//g, '-')}.png`;
             canvas.toBlob((blob) => {
               if (!blob) return;
-              const file = new File([blob], fileName, { type: 'image/jpeg' });
+              const file = new File([blob], fileName, { type: 'image/png' });
               if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 navigator.share({ files: [file] }).catch((error) => { this.fallbackDownload(canvas, fileName); });
               } else { this.fallbackDownload(canvas, fileName); }
-            }, 'image/jpeg', 1.0);
+            }, 'image/png');
           }).catch(err => {
             blinkEls.forEach(el => el.style.animation = ''); alert('เกิดข้อผิดพลาด: ' + err.message);
           });
         },
 
         fallbackDownload(canvas, fileName) {
-          const link = document.createElement('a'); link.download = fileName; link.href = canvas.toDataURL('image/jpeg', 1.0); link.click();
+          const link = document.createElement('a'); link.download = fileName; link.href = canvas.toDataURL('image/png'); link.click();
         },
 
         copyReportMobile(showAlert = true) {

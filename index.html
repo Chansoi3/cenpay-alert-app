@@ -36,38 +36,36 @@
     .form-select-sm, .form-control { border-radius: 6px; border-color: #ced4da; }
     .form-select-sm:focus, .form-control:focus { border-color: #86b7fe; box-shadow: 0 0 0 0.25rem rgba(13,110,253,0.25); }
     
-    /* แต่งตาราง Report ให้สวยงามและสัดส่วนคงที่ */
+    /* สไตล์สำหรับการแจ้งเตือนช่องพนักงานแบบ Lock */
+    .select-alert-locked {
+      background-color: #f8d7da !important;
+      color: #842029 !important;
+      border: 2px solid #dc3545 !important;
+      font-weight: bold;
+    }
+
+    /* อนิเมชั่นกระพริบปุ่มตรวจสอบสีแดง */
+    @keyframes pulse-red {
+      0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(220, 53, 69, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+    .btn-alert-pulse {
+      animation: pulse-red 1.5s infinite;
+      border: 2px solid #dc3545;
+    }
+    
     .report-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; background-color: #fff; table-layout: fixed; }
     .report-table thead th { 
-      background-color: #d6eaff !important; 
-      color: #004085 !important; 
-      text-align: center; 
-      vertical-align: middle; 
-      border: 1px solid #c2dbfe;
-      font-weight: bold;
-      padding: 12px 6px;
+      background-color: #d6eaff !important; color: #004085 !important; 
+      text-align: center; vertical-align: middle; border: 1px solid #c2dbfe; font-weight: bold; padding: 12px 6px;
     }
-    .report-table tbody td { 
-      vertical-align: middle; 
-      border: 1px solid #e9ecef; 
-      padding: 10px 8px;
-      word-wrap: break-word; 
-    }
+    .report-table tbody td { vertical-align: middle; border: 1px solid #e9ecef; padding: 10px 8px; word-wrap: break-word; }
     .report-table tbody tr:nth-child(even) { background-color: #f8f9fa; } 
 
-    /* อนิเมชั่นกระพริบตัวหนังสือ */
-    @keyframes blinker {
-      50% { opacity: 0; }
-    }
-    .blink-text {
-      animation: blinker 1s linear infinite;
-    }
-    /* บังคับสีแดงเมื่อ Input ถูกล็อค */
-    input:disabled.text-danger {
-      background-color: #f8f9fa;
-      color: #dc3545 !important;
-      -webkit-text-fill-color: #dc3545;
-    }
+    /* อนิเมชั่นกระพริบตัวหนังสือ (เฉพาะใน Popup) */
+    @keyframes blinker { 50% { opacity: 0; } }
+    .blink-text { animation: blinker 1s linear infinite; }
   </style>
 </head>
 <body>
@@ -164,47 +162,21 @@
                     <strong>ธนาคาร:</strong> <span class="badge bg-secondary fw-normal">{{ txn.BillType }}</span>
                   </div>
                 </div>
-                
-                <div class="row g-2 bg-white p-3 rounded border mb-3 shadow-sm border-danger border-opacity-25">
-                  <div class="col-12 mb-1"><span class="badge bg-danger text-white"><i class="fa-solid fa-id-card me-1"></i> ข้อมูลพนักงานปลายทาง</span></div>
-                  <div class="col-12 col-md-3">
-                    <label class="form-label small mb-1 text-secondary fw-bold">Receiver Emp ID</label>
-                    <input type="text" class="form-control form-control-sm"
-                           :class="{'text-danger fw-bold': txn.originalData.Receiver_Emp_ID}"
-                           :disabled="!!txn.originalData.Receiver_Emp_ID"
-                           v-model="txn.checkData.Receiver_Emp_ID">
-                  </div>
-                  <div class="col-12 col-md-3">
-                    <label class="form-label small mb-1 text-secondary fw-bold">Depositor Emp ID</label>
-                    <input type="text" class="form-control form-control-sm"
-                           :class="{'text-danger fw-bold': txn.originalData.Depositor_Emp_ID}"
-                           :disabled="!!txn.originalData.Depositor_Emp_ID"
-                           v-model="txn.checkData.Depositor_Emp_ID">
-                  </div>
-                  <div class="col-12 col-md-3">
-                    <label class="form-label small mb-1 text-secondary fw-bold">Depositor Name</label>
-                    <input type="text" class="form-control form-control-sm"
-                           :class="{'blink-text text-danger fw-bold': txn.originalData.Depositor_Name, 'text-danger fw-bold': txn.originalData.Depositor_Name}"
-                           :disabled="!!txn.originalData.Depositor_Name"
-                           v-model="txn.checkData.Depositor_Name">
-                  </div>
-                  <div class="col-12 col-md-3">
-                    <label class="form-label small mb-1 text-secondary fw-bold">Depositor Position</label>
-                    <input type="text" class="form-control form-control-sm"
-                           :class="{'text-danger fw-bold': txn.originalData.Depositor_Position}"
-                           :disabled="!!txn.originalData.Depositor_Position"
-                           v-model="txn.checkData.Depositor_Position">
-                  </div>
-                </div>
 
                 <div class="row g-2 bg-light p-2 rounded border">
                   <div class="col-12 col-md-4">
-                    <label class="form-label small mb-1 text-secondary fw-bold">ประเภทบัญชี</label>
-                    <select class="form-select form-select-sm" v-model="txn.checkData.Type">
+                    <label class="form-label small mb-1 fw-bold" :class="txn.isAutoEmployee ? 'text-danger' : 'text-secondary'">ประเภทบัญชี</label>
+                    <select class="form-select form-select-sm" 
+                            :class="{'select-alert-locked': txn.isAutoEmployee}" 
+                            v-model="txn.checkData.Type" 
+                            :disabled="txn.isAutoEmployee">
                       <option value="">-- เลือก --</option>
                       <option value="พนักงาน">พนักงาน</option>
                       <option value="ลูกค้า">ลูกค้า</option>
                     </select>
+                    <div v-if="txn.isAutoEmployee" class="text-danger small mt-1 fw-bold" style="font-size: 0.75rem;">
+                      <i class="fa-solid fa-circle-exclamation"></i> ระบบตรวจพบชื่อพนักงาน
+                    </div>
                   </div>
                   <div class="col-12 col-md-4">
                     <label class="form-label small mb-1 text-secondary fw-bold">มีเงินสดหรือไม่</label>
@@ -222,7 +194,22 @@
                       <option value="ไม่ใช่">ไม่ใช่ (ปกติ)</option>
                     </select>
                   </div>
+
+                  <div class="col-12 mt-2" v-if="txn.checkData.Type === 'พนักงาน'">
+                    <label class="form-label small mb-1 text-primary fw-bold"><i class="fa-solid fa-pen me-1"></i> หมายเหตุ (สำหรับพนักงาน)</label>
+                    <input type="text" class="form-control form-control-sm border-primary" v-model="txn.checkData.Remark" placeholder="ระบุหมายเหตุเพิ่มเติม (ถ้ามี)">
+                  </div>
+
+                  <div class="col-12 mt-2 pt-1 border-top" v-if="txn.checkData.Type === 'พนักงาน'">
+                    <button class="btn btn-sm w-100 fw-bold" 
+                            :class="txn.isAutoEmployee ? 'btn-danger btn-alert-pulse text-white' : 'btn-outline-primary'" 
+                            @click="openEmployeeModal(txn)">
+                      <i class="fa-solid fa-user-magnifying-glass me-2"></i> 
+                      {{ txn.isAutoEmployee ? 'กดเพื่อตรวจสอบข้อมูลพนักงาน (Alert!)' : 'ตรวจสอบ/กรอกข้อมูลพนักงานเพิ่มเติม' }}
+                    </button>
+                  </div>
                 </div>
+
               </div>
 
               <div class="d-flex justify-content-between mt-4">
@@ -242,7 +229,6 @@
             
             <div v-else>
               <h5 class="text-success fw-bold text-center mb-4"><i class="fa-solid fa-circle-check me-2"></i>บันทึกข้อมูลเรียบร้อย</h5>
-              
               <div class="bg-white p-4 rounded shadow-sm border mb-4 text-start mx-auto" style="font-size: 1.05rem; line-height: 1.8; max-width: 600px;">
                 AM: <strong>{{ amCode }}</strong><br>
                 สรุปการตรวจสอบ Cenpay Alert<br>
@@ -253,36 +239,21 @@
               </div>
               
               <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
-                <button class="btn btn-primary px-4 py-2" @click="shareReport">
-                  <i class="fa-solid fa-share-nodes me-2"></i>แชร์รูปภาพ
-                </button>
-                <button class="btn btn-outline-primary px-4 py-2 bg-white" @click="copyReportMobile">
-                  <i class="fa-solid fa-copy me-2"></i>คัดลอกข้อความ
-                </button>
-                <button class="btn btn-success px-4 py-2" @click="downloadExcel">
-                  <i class="fa-solid fa-file-excel me-2"></i>ดาวน์โหลด Excel
-                </button>
+                <button class="btn btn-primary px-4 py-2" @click="shareReport"><i class="fa-solid fa-share-nodes me-2"></i>แชร์รูปภาพ</button>
+                <button class="btn btn-outline-primary px-4 py-2 bg-white" @click="copyReportMobile"><i class="fa-solid fa-copy me-2"></i>คัดลอกข้อความ</button>
+                <button class="btn btn-success px-4 py-2" @click="downloadExcel"><i class="fa-solid fa-file-excel me-2"></i>ดาวน์โหลด Excel</button>
               </div>
 
               <div class="mb-4" style="overflow-x: auto;">
-                <div id="reportCapture" class="bg-white shadow-sm" style="padding: 20px; width: 1600px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                <div id="reportCapture" class="bg-white shadow-sm" style="padding: 20px; width: 1700px; border: 1px solid #e0e0e0; border-radius: 8px;">
                   <table class="report-table">
                     <thead>
                       <tr>
-                        <th style="width: 3%;">ลำดับ</th>
-                        <th style="width: 6%;">วันที่</th>
-                        <th style="width: 5%;">รหัส<br>สาขา</th>
-                        <th style="width: 10%;">ชื่อสาขา</th>
-                        <th style="width: 10%;">ชื่อบัญชีปลายทาง</th>
-                        <th style="width: 6%;">จำนวน<br>เงิน</th>
-                        <th style="width: 6%;">ประเภท<br>ธนาคาร</th>
-                        <th style="width: 7%;">ประเภท<br>(พนักงาน/ลูกค้า)</th>
-                        <th style="width: 7%;">มีเงินสดจริงหรือไม่</th>
-                        <th style="width: 7%;">พบความผิดปกติ</th>
-                        <th style="width: 8%;">Receiver<br>Emp ID</th>
-                        <th style="width: 8%;">Depositor<br>Emp ID</th>
-                        <th style="width: 10%;">Depositor Name</th>
-                        <th style="width: 7%;">Depositor<br>Position</th>
+                        <th style="width: 3%;">ลำดับ</th><th style="width: 5%;">วันที่</th><th style="width: 4%;">สาขา</th><th style="width: 9%;">ชื่อสาขา</th>
+                        <th style="width: 10%;">ชื่อบัญชีปลายทาง</th><th style="width: 6%;">จำนวนเงิน</th><th style="width: 6%;">ประเภทธนาคาร</th>
+                        <th style="width: 6%;">ประเภท</th><th style="width: 6%;">มีเงินสด</th><th style="width: 6%;">พบความผิดปกติ</th>
+                        <th style="width: 8%;">Receiver Emp ID</th><th style="width: 8%;">Depositor Emp ID</th><th style="width: 9%;">Depositor Name</th>
+                        <th style="width: 6%;">Depositor Position</th><th style="width: 8%;">หมายเหตุ</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -297,26 +268,23 @@
                         <td class="text-center">{{ item.Type }}</td>
                         <td class="text-center">{{ item.Cash_Exist }}</td>
                         <td class="text-center">
-                          <span v-if="item.Is_Abnormal === 'ใช่'" style="background-color: #dc3545; color: white; padding: 4px 14px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; display: inline-block; width: 80px;">ผิดปกติ</span>
-                          <span v-else style="background-color: #198754; color: white; padding: 4px 14px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; display: inline-block; width: 80px;">ปกติ</span>
+                          <span v-if="item.Is_Abnormal === 'ใช่'" style="background-color: #dc3545; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; display: inline-block;">ผิดปกติ</span>
+                          <span v-else style="background-color: #198754; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; display: inline-block;">ปกติ</span>
                         </td>
                         <td class="text-center" :class="{'text-danger fw-bold': item.Receiver_Emp_ID}">{{ item.Receiver_Emp_ID }}</td>
                         <td class="text-center" :class="{'text-danger fw-bold': item.Depositor_Emp_ID}">{{ item.Depositor_Emp_ID }}</td>
                         <td class="text-start" :class="{'blink-text text-danger fw-bold': item.Depositor_Name}">{{ item.Depositor_Name }}</td>
                         <td class="text-start" :class="{'text-danger fw-bold': item.Depositor_Position}">{{ item.Depositor_Position }}</td>
+                        <td class="text-start text-primary small">{{ item.Remark }}</td>
                       </tr>
-                      <tr v-if="detailData.length === 0">
-                        <td colspan="14" class="text-muted text-center py-4">ไม่พบข้อมูล</td>
-                      </tr>
+                      <tr v-if="detailData.length === 0"><td colspan="15" class="text-muted text-center py-4">ไม่พบข้อมูล</td></tr>
                     </tbody>
                   </table>
                 </div>
               </div>
               
               <div class="text-center pb-4">
-                <button class="btn btn-outline-secondary py-2 px-5 text-dark" @click="page = 'home'; loadSummary()">
-                  <i class="fa-solid fa-house me-2"></i>กลับหน้าหลัก
-                </button>
+                <button class="btn btn-outline-secondary py-2 px-5 text-dark" @click="page = 'home'; loadSummary()"><i class="fa-solid fa-house me-2"></i>กลับหน้าหลัก</button>
               </div>
             </div>
           </div>
@@ -332,24 +300,76 @@
       </div>
       <div class="offcanvas-body bg-light p-3">
         <h6 class="text-dark fw-bold mb-3 pb-2 border-bottom"><i class="fa-solid fa-user me-2 text-muted"></i>AM: {{ amCode }}</h6>
-        <div class="text-center mt-5" v-if="loadingHistory">
-          <div class="spinner-border text-primary border-2"></div>
-        </div>
+        <div class="text-center mt-5" v-if="loadingHistory"><div class="spinner-border text-primary border-2"></div></div>
         <div v-else>
-          <div v-if="historyList.length === 0" class="text-center text-muted mt-5">
-            <i class="fa-solid fa-folder-open fs-1 mb-3 text-secondary opacity-50"></i><br>ไม่มีข้อมูลประวัติ
-          </div>
+          <div v-if="historyList.length === 0" class="text-center text-muted mt-5"><i class="fa-solid fa-folder-open fs-1 mb-3 text-secondary opacity-50"></i><br>ไม่มีข้อมูลประวัติ</div>
           <div class="card mb-3 border-0 shadow-sm" v-for="h in historyList" :key="h.date">
             <div class="card-body p-3">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="fw-bold text-dark"><i class="fa-regular fa-calendar me-2 text-primary"></i>{{ formatShortDate(h.date) }}</span>
                 <span class="badge bg-success px-2 fw-normal">{{ h.total }} Txn</span>
               </div>
-              <div class="text-danger small mb-3 fw-bold bg-danger bg-opacity-10 p-1 rounded px-2" v-if="h.abnormal > 0">
-                <i class="fa-solid fa-circle-exclamation me-1"></i>ผิดปกติ {{ h.abnormal }} รายการ
-              </div>
+              <div class="text-danger small mb-3 fw-bold bg-danger bg-opacity-10 p-1 rounded px-2" v-if="h.abnormal > 0"><i class="fa-solid fa-circle-exclamation me-1"></i>ผิดปกติ {{ h.abnormal }} รายการ</div>
               <button class="btn btn-sm btn-outline-primary w-100" @click="viewHistoryDetail(h.date)">ดูรายงาน / ดาวน์โหลด Excel</button>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="employeeModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title fs-6"><i class="fa-solid fa-id-card me-2"></i>รายละเอียดข้อมูลพนักงาน</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body bg-light" v-if="selectedTxn">
+            
+            <div class="alert alert-warning py-2 mb-3" v-if="selectedTxn.isAutoEmployee">
+              <i class="fa-solid fa-triangle-exclamation text-danger me-1"></i> <strong>ระบบดึงข้อมูลให้อัตโนมัติ</strong> (ไม่สามารถแก้ไขได้)
+            </div>
+
+            <div class="mb-3 bg-white p-2 rounded border">
+              <span class="text-secondary small fw-bold">ชื่อบัญชีปลายทาง:</span>
+              <div class="text-dark fw-bold">{{ selectedTxn.Ref1 }}</div>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label small mb-1 text-secondary fw-bold">Receiver Emp ID</label>
+                <input type="text" class="form-control"
+                       :class="{'text-danger fw-bold bg-white': selectedTxn.originalData.Receiver_Emp_ID}"
+                       :disabled="!!selectedTxn.originalData.Receiver_Emp_ID"
+                       v-model="selectedTxn.checkData.Receiver_Emp_ID">
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small mb-1 text-secondary fw-bold">Depositor Emp ID</label>
+                <input type="text" class="form-control"
+                       :class="{'text-danger fw-bold bg-white': selectedTxn.originalData.Depositor_Emp_ID}"
+                       :disabled="!!selectedTxn.originalData.Depositor_Emp_ID"
+                       v-model="selectedTxn.checkData.Depositor_Emp_ID">
+              </div>
+              <div class="col-12">
+                <label class="form-label small mb-1 text-secondary fw-bold">Depositor Name</label>
+                <input type="text" class="form-control"
+                       :class="{'blink-text text-danger fw-bold bg-white': selectedTxn.originalData.Depositor_Name, 'text-danger fw-bold bg-white': selectedTxn.originalData.Depositor_Name}"
+                       :disabled="!!selectedTxn.originalData.Depositor_Name"
+                       v-model="selectedTxn.checkData.Depositor_Name">
+              </div>
+              <div class="col-12">
+                <label class="form-label small mb-1 text-secondary fw-bold">Depositor Position</label>
+                <input type="text" class="form-control"
+                       :class="{'text-danger fw-bold bg-white': selectedTxn.originalData.Depositor_Position}"
+                       :disabled="!!selectedTxn.originalData.Depositor_Position"
+                       v-model="selectedTxn.checkData.Depositor_Position">
+              </div>
+            </div>
+
+          </div>
+          <div class="modal-footer bg-light border-top-0">
+            <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">ปิด</button>
+            <button type="button" class="btn btn-success px-4" data-bs-dismiss="modal"><i class="fa-solid fa-check me-1"></i> ยืนยันข้อมูล</button>
           </div>
         </div>
       </div>
@@ -364,15 +384,16 @@
       el: '#app',
       data: {
         page: 'login',
-        amCode: '', 
-        amList: [],
-        isFetchingAMs: true,
+        amCode: '', amList: [], isFetchingAMs: true,
         loading: false, loadingHistory: false,
         summaryList: [], historyList: [],
         stores: [], currentStoreIndex: 0,
         checkedResults: [], checkedDate: '',
         reportSummary: { totalTxn: 0, abnormalCount: 0, employeeCount: 0 },
-        detailData: []
+        detailData: [],
+        
+        empModal: null,      // ตัวแปรเก็บ Modal Object
+        selectedTxn: null    // รายการที่ถูกกดเปิด Modal
       },
       computed: {
         currentStore() { return this.stores[this.currentStoreIndex] || { transactions: [] }; },
@@ -383,6 +404,8 @@
       },
       mounted() { 
         this.fetchAMList();
+        // กำหนดค่าเริ่มต้นให้ Bootstrap Modal
+        this.empModal = new bootstrap.Modal(document.getElementById('employeeModal'));
       },
       methods: {
         async fetchAMList() {
@@ -390,25 +413,18 @@
           const list = await this.callAPI({ action: 'getAMList' });
           if (list && list.length > 0) {
             this.amList = list.filter(am => am !== 'AM_LOGIN' && am !== 'AREACODE');
-          } else {
-            this.amList = [];
-          }
+          } else { this.amList = []; }
           this.isFetchingAMs = false;
         },
 
-        formatAmount(val) {
-          if (!val) return '0';
-          return Number(val).toLocaleString('th-TH');
-        },
+        formatAmount(val) { return (!val) ? '0' : Number(val).toLocaleString('th-TH'); },
         
         formatShortDate(val) {
           if (!val) return '';
           let str = val.toString();
           let parts = str.split('/');
           if (parts.length === 3) {
-            let p1 = parts[0].padStart(2, '0'); 
-            let p2 = parts[1].padStart(2, '0'); 
-            let p3 = parts[2]; 
+            let p1 = parts[0].padStart(2, '0'); let p2 = parts[1].padStart(2, '0'); let p3 = parts[2]; 
             if (p3.length === 4) { p3 = p3.slice(-2); }
             return `${p1}/${p2}/${p3}`;
           }
@@ -432,10 +448,8 @@
               else {
                 if (j > 0) {
                   let newValue = costs[j - 1];
-                  if (s1.charAt(i - 1) != s2.charAt(j - 1))
-                    newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
-                  costs[j - 1] = lastValue;
-                  lastValue = newValue;
+                  if (s1.charAt(i - 1) != s2.charAt(j - 1)) newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                  costs[j - 1] = lastValue; lastValue = newValue;
                 }
               }
             }
@@ -447,21 +461,16 @@
         async callAPI(payload) {
           try {
             const response = await fetch(API_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify(payload)
+              method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload)
             });
             const result = await response.json();
             if(result.status === 'success') return result.data;
             else throw new Error(result.message);
-          } catch (e) {
-            alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + e.message); return null;
-          }
+          } catch (e) { alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + e.message); return null; }
         },
 
         async loadSummary() {
           if(!this.amCode) { return; } 
-          
           this.loading = true; this.page = 'home';
           this.fetchHistory();
           this.summaryList = await this.callAPI({ action: 'getSummary', amCode: this.amCode }) || [];
@@ -482,7 +491,6 @@
         async startChecking(date) {
           this.loading = true; this.checkedDate = date;
           const txns = await this.callAPI({ action: 'getTransactions', date: date, amCode: this.amCode }) || [];
-          
           const storeGroups = {};
           
           txns.forEach(t => {
@@ -492,32 +500,35 @@
             t.cleanNameStr = this.cleanName(t.Ref1);
             t.isDuplicate = false; 
             
-            // เตรียม CheckData ของใหม่
+            // เช็คและล็อก Type พนักงานทันทีที่พบข้อมูล
+            let autoEmployee = !!t.Depositor_Name;
+            
             t.checkData = { 
-              Type: '', Cash_Exist: '', Is_Abnormal: '',
+              Type: autoEmployee ? 'พนักงาน' : '', 
+              Cash_Exist: '', Is_Abnormal: '',
               Receiver_Emp_ID: t.Receiver_Emp_ID || '',
               Depositor_Emp_ID: t.Depositor_Emp_ID || '',
               Depositor_Name: t.Depositor_Name || '',
-              Depositor_Position: t.Depositor_Position || ''
+              Depositor_Position: t.Depositor_Position || '',
+              Remark: '' // เพิ่มหมายเหตุ
             };
-            // เก็บตัวต้นฉบับไว้เช็คว่าควร Lock หรือไม่
+            
             t.originalData = { 
-              Receiver_Emp_ID: t.Receiver_Emp_ID || '',
-              Depositor_Emp_ID: t.Depositor_Emp_ID || '',
-              Depositor_Name: t.Depositor_Name || '',
-              Depositor_Position: t.Depositor_Position || ''
+              Receiver_Emp_ID: t.Receiver_Emp_ID || '', Depositor_Emp_ID: t.Depositor_Emp_ID || '',
+              Depositor_Name: t.Depositor_Name || '', Depositor_Position: t.Depositor_Position || ''
             };
+            
+            t.isAutoEmployee = autoEmployee;
+
             storeGroups[t.StoreCode].transactions.push(t);
           });
 
           Object.values(storeGroups).forEach(store => {
             for (let i = 0; i < store.transactions.length; i++) {
               for (let j = i + 1; j < store.transactions.length; j++) {
-                let n1 = store.transactions[i].cleanNameStr;
-                let n2 = store.transactions[j].cleanNameStr;
+                let n1 = store.transactions[i].cleanNameStr; let n2 = store.transactions[j].cleanNameStr;
                 if (n1 === n2 || this.similarity(n1, n2) > 0.65) {
-                  store.transactions[i].isDuplicate = true;
-                  store.transactions[j].isDuplicate = true;
+                  store.transactions[i].isDuplicate = true; store.transactions[j].isDuplicate = true;
                 }
               }
             }
@@ -529,6 +540,11 @@
           this.page = 'checking'; this.loading = false;
         },
         
+        openEmployeeModal(txn) {
+          this.selectedTxn = txn;
+          this.empModal.show();
+        },
+
         async nextStore() {
           this.currentStore.transactions.forEach(t => {
             this.checkedResults.push({ 
@@ -539,7 +555,8 @@
               Receiver_Emp_ID: t.checkData.Receiver_Emp_ID,
               Depositor_Emp_ID: t.checkData.Depositor_Emp_ID,
               Depositor_Name: t.checkData.Depositor_Name,
-              Depositor_Position: t.checkData.Depositor_Position
+              Depositor_Position: t.checkData.Depositor_Position,
+              Remark: t.checkData.Remark
             });
           });
 
@@ -569,88 +586,53 @@
         shareReport() {
           const captureElement = document.getElementById('reportCapture');
           if (!captureElement) return;
-          
           this.copyReportMobile(false); 
-          
           alert('ระบบได้คัดลอกข้อความสรุปผลให้แล้วครับ\n\nเมื่อกดเข้าแอป LINE ให้กดค้างที่ช่องพิมพ์ แล้วเลือก "วาง" (Paste) เพื่อส่งข้อความไปพร้อมกับรูปภาพได้เลยครับ');
 
-          // ทริคป้องกัน html2canvas จับภาพตอนตัวอักษรกำลังกระพริบ (opacity = 0)
           const blinkEls = captureElement.querySelectorAll('.blink-text');
           blinkEls.forEach(el => el.style.animation = 'none');
 
           html2canvas(captureElement, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => {
-            // คืนค่าอนิเมชั่นกระพริบกลับมา
             blinkEls.forEach(el => el.style.animation = '');
-            
             const fileName = `Cenpay_Table_${this.amCode}_${this.checkedDate.replace(/\//g, '-')}.jpg`;
-            
             canvas.toBlob((blob) => {
               if (!blob) return;
               const file = new File([blob], fileName, { type: 'image/jpeg' });
-
               if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                navigator.share({
-                  files: [file]
-                }).catch((error) => {
-                  console.log('ยกเลิกการแชร์', error);
-                  this.fallbackDownload(canvas, fileName);
-                });
-              } else {
-                this.fallbackDownload(canvas, fileName);
-              }
+                navigator.share({ files: [file] }).catch((error) => { this.fallbackDownload(canvas, fileName); });
+              } else { this.fallbackDownload(canvas, fileName); }
             }, 'image/jpeg', 1.0);
-
           }).catch(err => {
-            // คืนค่าอนิเมชั่นกระพริบกลับมาหาก error
-            blinkEls.forEach(el => el.style.animation = '');
-            alert('เกิดข้อผิดพลาดในการสร้างรูปภาพ: ' + err.message);
+            blinkEls.forEach(el => el.style.animation = ''); alert('เกิดข้อผิดพลาด: ' + err.message);
           });
         },
 
         fallbackDownload(canvas, fileName) {
-          const link = document.createElement('a');
-          link.download = fileName;
-          link.href = canvas.toDataURL('image/jpeg', 1.0);
-          link.click();
+          const link = document.createElement('a'); link.download = fileName; link.href = canvas.toDataURL('image/jpeg', 1.0); link.click();
         },
 
         copyReportMobile(showAlert = true) {
           const textToCopy = `AM: ${this.amCode}\nสรุปการตรวจสอบ Cenpay Alert\nวันที่: ${this.formatShortDate(this.checkedDate)}\nจำนวนรวม = ${this.formatAmount(this.reportSummary.totalTxn)} Txn\nจำนวนบัญชีปลายทางที่ผิดปกติ = ${this.formatAmount(this.reportSummary.abnormalCount)} Txn\nบัญชีรับโอนเป็นพนักงานสาขา = ${this.formatAmount(this.reportSummary.employeeCount)} Txn`;
-          
-          const textArea = document.createElement("textarea");
-          textArea.value = textToCopy;
-          textArea.style.position = "fixed";
-          textArea.style.top = "-9999px";
-          textArea.style.left = "-9999px";
-          
-          document.body.appendChild(textArea);
-          textArea.focus();
-          textArea.select();
-          
+          const textArea = document.createElement("textarea"); textArea.value = textToCopy;
+          textArea.style.position = "fixed"; textArea.style.top = "-9999px"; textArea.style.left = "-9999px";
+          document.body.appendChild(textArea); textArea.focus(); textArea.select();
           try {
             const successful = document.execCommand('copy');
             if (successful && showAlert) { alert('คัดลอกข้อความสำเร็จแล้ว นำไปวางได้เลยครับ!'); } 
           } catch (err) {
-            if (navigator.clipboard) {
-              navigator.clipboard.writeText(textToCopy).then(() => {
-                if(showAlert) alert('คัดลอกข้อความสำเร็จแล้ว นำไปวางได้เลยครับ!');
-              });
-            }
+            if (navigator.clipboard) { navigator.clipboard.writeText(textToCopy).then(() => { if(showAlert) alert('คัดลอกข้อความสำเร็จแล้ว นำไปวางได้เลยครับ!'); }); }
           }
           document.body.removeChild(textArea);
         },
         
         downloadExcel() {
           if(!this.detailData || this.detailData.length === 0) return alert('ไม่พบข้อมูลสำหรับดาวน์โหลด');
-          
           const excelData = [];
           
-          // อัปเดต Header ในไฟล์ Excel
           excelData.push([
-            "DM", "StoreCode", "StoreNameE", "Ref1", 
-            "Amount", "Txn", "BillType", "date", 
+            "DM", "StoreCode", "StoreNameE", "Ref1", "Amount", "Txn", "BillType", "date", 
             "เป็นพนักงาน/ลูกค้า", "มีเงินสดจริงหรือไม่", "มีความผิดปกติหรือไม่",
-            "Receiver Employee ID", "Depositor Employee ID", "Depositor Name", "Depositor Position"
+            "Receiver Employee ID", "Depositor Employee ID", "Depositor Name", "Depositor Position", "หมายเหตุ"
           ]);
           
           this.detailData.forEach(row => {
@@ -658,21 +640,10 @@
             let abnormalStatus = row.Is_Abnormal === 'ใช่' ? 'ผิดปกติ' : 'ไม่ผิดปกติ';
             
             excelData.push([
-              row.DM || this.amCode,
-              row.StoreCode,
-              row.StoreNameE,
-              row.Ref1,
-              row.Amount, 
-              row.Txn,
-              row.BillType,
+              row.DM || this.amCode, row.StoreCode, row.StoreNameE, row.Ref1, row.Amount, row.Txn, row.BillType,
               row.date ? this.formatShortDate(row.date) : this.formatShortDate(this.checkedDate),
-              row.Type,
-              cashStatus,
-              abnormalStatus,
-              row.Receiver_Emp_ID,
-              row.Depositor_Emp_ID,
-              row.Depositor_Name,
-              row.Depositor_Position
+              row.Type, cashStatus, abnormalStatus,
+              row.Receiver_Emp_ID, row.Depositor_Emp_ID, row.Depositor_Name, row.Depositor_Position, row.Remark
             ]);
           });
 

@@ -236,11 +236,11 @@
     /* ====== 🆕 ลายน้ำ (watermark) ====== */
     .watermark-corner {
       position: fixed; bottom: 16px; left: 18px;
-      z-index: 0; pointer-events: none;
-      font-size: 0.85rem; font-weight: 600;
-      color: rgba(190, 18, 60, 0.35);
+      z-index: 9999; pointer-events: none;
+      font-size: 0.9rem; font-weight: 700;
+      color: rgba(190, 18, 60, 0.55);
       letter-spacing: 0.02em;
-      text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+      text-shadow: 0 1px 2px rgba(255,255,255,0.7);
       user-select: none;
     }
     .container { position: relative; z-index: 1; }
@@ -281,7 +281,10 @@
 </head>
 <body>
   <div id="app">
-    
+
+    <!-- ✅ ลายน้ำมุมล่างซ้าย — แสดงทุกหน้า (ตั้งแต่ login) -->
+    <div class="watermark-corner">Power by PiWirakorn</div>
+
     <div v-if="page === 'login'" class="login-fullscreen">
       <div class="login-hero">
         <i class="fa-solid fa-shield-check login-hero-icon"></i>
@@ -312,9 +315,6 @@
       </nav>
 
       <div class="container pb-5">
-
-        <!-- ✅ ลายน้ำมุมล่างซ้าย -->
-        <div v-if="page === 'home'" class="watermark-corner">Power by PiWirakorn</div>
 
         <div v-if="page === 'home'" class="row justify-content-center">
           <div class="col-md-8 col-sm-12">

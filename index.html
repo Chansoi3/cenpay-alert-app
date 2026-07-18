@@ -86,22 +86,92 @@
 
     body { font-family: 'Sarabun', sans-serif; background-color: var(--bg); color: var(--ink-900); }
 
-    .login-wrapper {
-      min-height: 100vh; display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg, var(--rose-100) 0%, var(--rose-50) 100%);
-      padding: 20px;
+    /* ====== 🆕 Login Full Screen — โทน Rose/Coral ทันสมัย ====== */
+    .login-fullscreen {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #fbe4e6 0%, #fff1f2 45%, #ffd9de 100%);
+      padding: 24px;
+      overflow: hidden;
     }
-    .login-card {
-      background: #fff; border-radius: var(--radius); border: 1px solid var(--rose-100);
-      box-shadow: var(--shadow-lg); overflow: hidden; width: 100%; max-width: 400px;
+    /* decorative blobs */
+    .login-fullscreen::before, .login-fullscreen::after {
+      content: ''; position: absolute; border-radius: 50%;
+      filter: blur(60px); opacity: 0.55; pointer-events: none;
     }
-    .login-header { padding: 30px 20px 10px; text-align: center; }
-    .login-icon {
-      font-size: 44px;
-      background: linear-gradient(135deg, var(--rose-400), var(--rose-600));
+    .login-fullscreen::before {
+      width: 380px; height: 380px; background: #fb7185;
+      top: -120px; right: -100px;
+    }
+    .login-fullscreen::after {
+      width: 320px; height: 320px; background: #f43f5e;
+      bottom: -100px; left: -80px;
+    }
+    .login-hero {
+      text-align: center; margin-bottom: 36px;
+      position: relative; z-index: 1;
+    }
+    .login-hero-icon {
+      font-size: 72px;
+      background: linear-gradient(135deg, #f43f5e, #be123c);
       -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-      margin-bottom: 15px;
+      filter: drop-shadow(0 8px 20px rgba(225,29,72,.3));
+      margin-bottom: 12px;
     }
+    .login-hero-title {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 800; color: var(--ink-900);
+      margin: 0 0 6px; letter-spacing: -0.02em;
+    }
+    .login-hero-sub {
+      font-size: 1.1rem; color: var(--ink-500); margin: 0; font-weight: 500;
+    }
+    .login-form {
+      width: 100%; max-width: 420px;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255,255,255,0.7);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: var(--shadow-lg);
+      position: relative; z-index: 1;
+    }
+    .login-label {
+      display: block; font-weight: 700; font-size: .95rem;
+      color: var(--ink-700); margin-bottom: 10px;
+    }
+    .login-select {
+      width: 100%; padding: 14px 16px;
+      border: 2px solid var(--rose-200); border-radius: 12px;
+      background: #fff; color: var(--ink-900);
+      font-size: 1.05rem; font-weight: 600;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23be123c' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .login-select:focus {
+      outline: none; border-color: var(--rose-500);
+      box-shadow: 0 0 0 4px rgba(244,63,94,.15);
+    }
+    .login-btn {
+      width: 100%; margin-top: 20px;
+      padding: 16px;
+      border: 0; border-radius: 12px;
+      background: linear-gradient(135deg, #f43f5e, #be123c);
+      color: #fff; font-size: 1.1rem; font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(225,29,72,.3);
+      transition: transform .15s, box-shadow .15s;
+    }
+    .login-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(225,29,72,.4);
+    }
+    .login-btn:active:not(:disabled) { transform: scale(.98); }
+    .login-btn:disabled { opacity: .55; cursor: not-allowed; }
 
     .btn { border-radius: 10px; font-weight: 600; transition: transform .15s, box-shadow .15s, background-color .15s; }
     .btn:hover:not(:disabled) { transform: translateY(-1px); }
@@ -163,6 +233,22 @@
     @keyframes blinker { 50% { opacity: 0; } }
     .blink-text { animation: blinker 1s linear infinite; }
 
+    /* ====== 🆕 ลายน้ำ (watermark) ====== */
+    .watermark-layer {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .watermark-text {
+      font-size: clamp(3rem, 9vw, 7rem);
+      font-weight: 900; color: rgba(225, 29, 72, 0.06);
+      letter-spacing: 0.04em; transform: rotate(-20deg);
+      white-space: nowrap; user-select: none;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+    }
+    .container { position: relative; z-index: 1; }
+    .navbar { z-index: 1020; }
+
     /* ====== 🆕 ปรับปรุง UX ใหม่ ====== */
     /* Fade transition ระหว่างหน้า */
     .page-fade-enter-active, .page-fade-leave-active { transition: opacity .2s ease, transform .2s ease; }
@@ -178,40 +264,45 @@
     }
     .loading-overlay .spinner-border { width: 3rem; height: 3rem; color: var(--rose-500); border-width: .25em; }
 
-    /* Toast สำหรับแจ้ง error แทน alert() ที่บล็อก UI */
+    /* Toast สำหรับแจ้ง error/success — ย้ายขึ้นด้านบน ใหญ่ขึ้น เด่นชัด */
     .toast-msg {
-      position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
-      background: var(--rose-600); color: #fff; padding: 12px 20px; border-radius: 12px;
-      box-shadow: var(--shadow-md); font-weight: 500; z-index: 1090;
-      animation: toast-in .25s ease;
-      max-width: 90vw;
+      position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--rose-600); color: #fff;
+      padding: 16px 28px; border-radius: 14px;
+      box-shadow: var(--shadow-lg);
+      font-weight: 600; font-size: 1.05rem;
+      z-index: 1100;
+      animation: toast-in .3s cubic-bezier(.2,.8,.2,1);
+      max-width: 92vw; text-align: center;
+      border: 2px solid rgba(255,255,255,0.2);
     }
-    @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+    @keyframes toast-in {
+      from { opacity: 0; transform: translate(-50%, -24px) scale(0.95); }
+      to   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    }
   </style>
 </head>
 <body>
   <div id="app">
     
-    <div v-if="page === 'login'" class="login-wrapper">
-      <div class="login-card animate__animated animate__fadeIn">
-        <div class="login-header">
-          <i class="fa-solid fa-shield-check login-icon"></i>
-          <h4 class="fw-bold text-dark mb-1">Cenpay Alert</h4>
-          <p class="text-muted small">ระบบตรวจสอบรายการผิดปกติ</p>
-        </div>
-        <div class="p-4 pt-2">
-          <label class="form-label text-secondary small fw-bold mb-1">เลือกรหัสผู้ตรวจสอบ (AM Code)</label>
-          <div class="mb-4">
-            <select class="form-select form-select-lg fs-6 bg-light text-center fw-bold text-primary shadow-sm" v-model="amCode" :disabled="isFetchingAMs" @change="loadSummary">
-              <option value="" disabled>{{ isFetchingAMs ? 'กำลังดึงข้อมูลรายชื่อ...' : '-เลือกพื้นที่(AM)-' }}</option>
-              <option v-for="am in amList" :key="am" :value="am">{{ am }}</option>
-            </select>
-          </div>
-          <button class="btn btn-primary w-100 py-2 fw-bold shadow-sm" @click="loadSummary" :disabled="!amCode || isFetchingAMs">
-            <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
-            เข้าสู่ระบบ <i class="fa-solid fa-arrow-right ms-1"></i>
-          </button>
-        </div>
+    <div v-if="page === 'login'" class="login-fullscreen">
+      <div class="login-hero">
+        <i class="fa-solid fa-shield-check login-hero-icon"></i>
+        <h1 class="login-hero-title">Cenpay Alert</h1>
+        <p class="login-hero-sub">ระบบตรวจสอบรายการผิดปกติ</p>
+      </div>
+      <div class="login-form">
+        <label class="login-label">เลือกรหัสผู้ตรวจสอบ (AM Code)</label>
+        <select class="login-select" v-model="amCode" :disabled="isFetchingAMs">
+          <option value="" disabled>{{ isFetchingAMs ? 'กำลังดึงข้อมูลรายชื่อ...' : '- เลือกพื้นที่ (AM) -' }}</option>
+          <option v-for="am in amList" :key="am" :value="am">
+            {{ amInfo[am] ? (am + ' — ' + amInfo[am]) : am }}
+          </option>
+        </select>
+        <button class="login-btn" @click="loadSummary" :disabled="!amCode || isFetchingAMs">
+          <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
+          เข้าสู่ระบบ <i class="fa-solid fa-arrow-right ms-2"></i>
+        </button>
       </div>
     </div>
 
@@ -224,7 +315,12 @@
       </nav>
 
       <div class="container pb-5">
-        
+
+        <!-- ✅ ลายน้ำหน้าหลัก -->
+        <div v-if="page === 'home'" class="watermark-layer">
+          <div class="watermark-text">AM404Piwirakorn</div>
+        </div>
+
         <div v-if="page === 'home'" class="row justify-content-center">
           <div class="col-md-8 col-sm-12">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -421,6 +517,101 @@
       </div>
     </div>
 
+    <!-- ====== 🆕 หน้าแก้ไขข้อมูล (edit) ====== -->
+    <div v-if="page === 'edit'" class="row justify-content-center">
+      <div class="col-md-10 col-sm-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold text-dark mb-0">
+            <i class="fa-solid fa-pen-to-square text-primary me-2"></i>แก้ไขข้อมูล
+            <span class="text-muted small ms-2">{{ formatShortDate(checkedDate) }}</span>
+          </h5>
+          <button class="btn btn-outline-secondary btn-sm" @click="page = 'home'; loadSummary()">
+            <i class="fa-solid fa-xmark me-1"></i>ปิด
+          </button>
+        </div>
+
+        <div v-if="loading" class="text-center py-5"><div class="spinner-border text-primary border-2"></div></div>
+
+        <div v-else-if="editList.length === 0" class="card p-5 text-center text-muted">
+          <i class="fa-solid fa-folder-open fs-1 mb-3 text-secondary opacity-50"></i><br>
+          ไม่มีข้อมูลให้แก้ไขในวันที่นี้
+        </div>
+
+        <div v-else>
+          <div class="card p-3 mb-3 border-0 shadow-sm" v-for="(txn, idx) in editList" :key="txn.rowId">
+            <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+              <span class="text-secondary small fw-bold">รายการที่ {{ idx + 1 }} — {{ txn.StoreCode }} {{ txn.StoreNameE }}</span>
+              <span class="badge bg-secondary fw-normal">{{ txn.BillType }}</span>
+            </div>
+
+            <div class="mb-2">
+              <div class="text-dark"><strong>ชื่อบัญชี:</strong> {{ txn.Ref1 }}</div>
+              <div><strong>ยอด:</strong> <span class="text-success fw-bold">{{ formatAmount(txn.Amount) }} ฿</span>
+                <span class="mx-2 text-muted">|</span>
+                <strong>Txn:</strong> <span class="text-primary">{{ txn.Txn }}</span></div>
+            </div>
+
+            <div class="row g-2 bg-light p-2 rounded border">
+              <div class="col-12 col-md-4">
+                <label class="form-label small mb-1 fw-bold text-secondary">ประเภทบัญชี</label>
+                <select class="form-select form-select-sm" v-model="txn.Type">
+                  <option value="">-- เลือก --</option>
+                  <option value="พนักงาน">พนักงาน</option>
+                  <option value="ลูกค้า">ลูกค้า</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-4">
+                <label class="form-label small mb-1 fw-bold text-secondary">มีเงินสด</label>
+                <select class="form-select form-select-sm" v-model="txn.Cash_Exist">
+                  <option value="">-- เลือก --</option>
+                  <option value="มี">มี</option>
+                  <option value="ไม่มี">ไม่มี</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-4">
+                <label class="form-label small mb-1 fw-bold text-secondary">พบความผิดปกติ</label>
+                <select class="form-select form-select-sm" v-model="txn.Is_Abnormal">
+                  <option value="">-- เลือก --</option>
+                  <option value="ใช่">ใช่ (ผิดปกติ)</option>
+                  <option value="ไม่ใช่">ไม่ใช่ (ปกติ)</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small mb-1 fw-bold text-secondary">Receiver Emp ID</label>
+                <input type="text" class="form-control form-control-sm" v-model="txn.Receiver_Emp_ID">
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small mb-1 fw-bold text-secondary">Depositor Emp ID</label>
+                <input type="text" class="form-control form-control-sm" v-model="txn.Depositor_Emp_ID">
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small mb-1 fw-bold text-secondary">Depositor Name</label>
+                <input type="text" class="form-control form-control-sm" v-model="txn.Depositor_Name">
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small mb-1 fw-bold text-secondary">Depositor Position</label>
+                <input type="text" class="form-control form-control-sm" v-model="txn.Depositor_Position">
+              </div>
+              <div class="col-12">
+                <label class="form-label small mb-1 fw-bold text-secondary">หมายเหตุ</label>
+                <input type="text" class="form-control form-control-sm" v-model="txn.Remark">
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mt-4 sticky-bottom bg-white py-3">
+            <button class="btn btn-outline-secondary px-4" @click="page = 'home'; loadSummary()">
+              <i class="fa-solid fa-arrow-left me-1"></i>ยกเลิก
+            </button>
+            <button class="btn btn-success px-4" @click="saveEdits" :disabled="loading">
+              <span v-if="loading" class="spinner-border spinner-border-sm me-1 border-2"></span>
+              <i class="fa-solid fa-check me-1" v-else></i>บันทึกการแก้ไข
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="offcanvas offcanvas-end" tabindex="-1" id="sidebarHistory">
       <div class="offcanvas-header bg-primary text-white">
         <h6 class="offcanvas-title mb-0"><i class="fa-solid fa-clock-rotate-left me-2"></i>ประวัติการตรวจสอบ</h6>
@@ -438,7 +629,14 @@
                 <span class="badge bg-success px-2 fw-normal">{{ h.total }} Txn</span>
               </div>
               <div class="text-danger small mb-3 fw-bold bg-danger bg-opacity-10 p-1 rounded px-2" v-if="h.abnormal > 0"><i class="fa-solid fa-circle-exclamation me-1"></i>ผิดปกติ {{ h.abnormal }} รายการ</div>
-              <button class="btn btn-sm btn-outline-primary w-100" @click="viewHistoryDetail(h.date)" :disabled="loading">ดูรายงาน / ดาวน์โหลด Excel</button>
+              <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-primary flex-fill" @click="viewHistoryDetail(h.date)" :disabled="loading">
+                  <i class="fa-solid fa-file-lines me-1"></i>ดูรายงาน
+                </button>
+                <button class="btn btn-sm btn-primary flex-fill" @click="editHistoryDetail(h.date)" :disabled="loading">
+                  <i class="fa-solid fa-pen-to-square me-1"></i>แก้ไขข้อมูล
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -526,8 +724,10 @@
       data: {
         page: 'login',
         amCode: '', amList: [], isFetchingAMs: true,
+        amInfo: {},   // ✅ { AM404: "Wirakorn Pingboon", ... }
         loading: false, loadingHistory: false,
         summaryList: [], historyList: [],
+        editList: [],   // ✅ รายการที่จะแก้ไขในหน้า edit
         stores: [], currentStoreIndex: 0,
         checkedResults: [], checkedDate: '',
         reportSummary: { totalTxn: 0, abnormalCount: 0, employeeCount: 0 },
@@ -547,19 +747,27 @@
           return this.currentStore.transactions.every(t => t.checkData.Type !== '' && t.checkData.Cash_Exist !== '' && t.checkData.Is_Abnormal !== '');
         }
       },
-      mounted() { 
+      mounted() {
         this.fetchAMList();
+        this.fetchAMInfo();
         this.empModal = new bootstrap.Modal(document.getElementById('employeeModal'));
       },
       methods: {
         async fetchAMList() {
           this.isFetchingAMs = true;
-          // ไม่แสดง overlay — เพราะเป็นการโหลดเงียบ ๆ ตอนเปิดเว็บ
           const list = await this.callAPI({ action: 'getAMList' }, { overlay: false });
           if (list && list.length > 0) {
             this.amList = list.filter(am => am !== 'AM_LOGIN' && am !== 'AREACODE');
           } else { this.amList = []; }
           this.isFetchingAMs = false;
+        },
+
+        // ✅ ดึง mapping AM code → ชื่อ-นามสกุล
+        async fetchAMInfo() {
+          const info = await this.callAPI({ action: 'getAMInfo' }, { overlay: false });
+          if (info && typeof info === 'object') {
+            this.amInfo = info;
+          }
         },
 
         formatAmount(val) { return (!val) ? '0' : Number(val).toLocaleString('th-TH'); },
@@ -743,12 +951,50 @@
           this.loading = true; this.checkedDate = date;
           await this.prepareReportData(date);
         },
-        
+
         async prepareReportData(date) {
           this.reportSummary = await this.callAPI({ action: 'getReport', date: date, amLogin: this.amCode });
           this.detailData = await this.callAPI({ action: 'getHistoryDetail', date: date, amCode: this.amCode }) || [];
           this.page = 'report'; this.loading = false;
-          this.fetchHistory(); 
+          this.fetchHistory();
+        },
+
+        // ✅ เปิดหน้าแก้ไข — โหลด row ทั้งหมดของวันนั้น พร้อม rowId
+        async editHistoryDetail(date) {
+          document.getElementById('closeHistoryBtn').click();
+          this.loading = true; this.checkedDate = date;
+          const rows = await this.callAPI({ action: 'getHistoryDetail', date: date, amCode: this.amCode }) || [];
+          // ทำสำเนาตัวแปร (เพื่อให้แก้ได้โดยตรง)
+          this.editList = rows.map(r => ({ ...r }));
+          this.page = 'edit'; this.loading = false;
+        },
+
+        // ✅ บันทึกการแก้ไข — update ทีละ row ผ่าน updateCheckedRow
+        async saveEdits() {
+          if (this.editList.length === 0) return;
+          this.loading = true;
+          let okCount = 0, errCount = 0;
+          for (const r of this.editList) {
+            const fields = {
+              Type: r.Type, Cash_Exist: r.Cash_Exist, Is_Abnormal: r.Is_Abnormal,
+              Receiver_Emp_ID: r.Receiver_Emp_ID || '',
+              Depositor_Emp_ID: r.Depositor_Emp_ID || '',
+              Depositor_Name: r.Depositor_Name || '',
+              Depositor_Position: r.Depositor_Position || '',
+              Remark: r.Remark || ''
+            };
+            const res = await this.callAPI({ action: 'updateCheckedRow', rowId: r.rowId, fields: fields }, { overlay: false });
+            if (res && res.ok) okCount++; else errCount++;
+          }
+          this.loading = false;
+          if (errCount === 0) {
+            this.showToast('✅ บันทึกการแก้ไขสำเร็จ ' + okCount + ' รายการ');
+          } else {
+            this.showToast('⚠️ สำเร็จ ' + okCount + ' | ผิดพลาด ' + errCount + ' รายการ', 3500);
+          }
+          // กลับหน้าหลัก + refresh
+          this.page = 'home';
+          this.loadSummary();
         },
 
         shareReport() {

@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <title>Cenpay Alert Checking</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
+  <meta name="theme-color" content="#f43f5e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="mobile-web-app-capable" content="yes">
 
   <!-- ✅ Preconnect ทำ DNS+TLS handshake ล่วงหน้า (เร็วขึ้น ~100-300ms) -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -235,13 +239,36 @@
 
     /* ====== 🆕 ลายน้ำ (watermark) ====== */
     .watermark-corner {
-      position: fixed; bottom: 16px; left: 18px;
-      z-index: 9999; pointer-events: none;
-      font-size: 0.9rem; font-weight: 700;
-      color: rgba(190, 18, 60, 0.55);
+      position: fixed;
+      bottom: env(safe-area-inset-bottom, 8px);
+      bottom: max(8px, env(safe-area-inset-bottom));
+      left: max(10px, env(safe-area-inset-left));
+      z-index: 9999;
+      pointer-events: none;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: rgba(190, 18, 60, 0.6);
       letter-spacing: 0.02em;
-      text-shadow: 0 1px 2px rgba(255,255,255,0.7);
+      text-shadow: 0 1px 2px rgba(255,255,255,0.8), 0 0 4px rgba(255,255,255,0.6);
       user-select: none;
+      padding: 6px 10px;
+      background: rgba(255, 241, 242, 0.5);
+      border-radius: 8px;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+    /* บนจอเล็ก (มือถือ) — ขยายขนาดให้อ่านง่าย */
+    @media (max-width: 576px) {
+      .watermark-corner {
+        font-size: 0.85rem;
+        bottom: 6px;
+        left: 6px;
+        padding: 4px 8px;
+      }
+    }
+    /* บนจอใหญ่ — ใหญ่ขึ้น */
+    @media (min-width: 992px) {
+      .watermark-corner { font-size: 1.05rem; }
     }
     .container { position: relative; z-index: 1; }
     .navbar { z-index: 1020; }
@@ -276,6 +303,36 @@
     @keyframes toast-in {
       from { opacity: 0; transform: translate(-50%, -24px) scale(0.95); }
       to   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    }
+
+    /* ====== 📱 Mobile responsive optimizations ====== */
+    @media (max-width: 576px) {
+      /* ลด padding รอบเนื้อหาในมือถือ */
+      .app-wrapper { padding-top: 10px; }
+      .container { padding-left: 14px; padding-right: 14px; }
+      .card { margin-bottom: 0.75rem !important; }
+      .row { --bs-gutter-x: 0.5rem; }
+      /* ปุ่มใหญ่ขึ้น แตะง่าย */
+      .btn-sm { padding: 8px 12px; font-size: 0.9rem; }
+      /* toast ขยายเต็มจอในมือถือ */
+      .toast-msg { font-size: 0.95rem; padding: 12px 18px; max-width: 96vw; }
+      /* login ปรับขนาด */
+      .login-form { padding: 22px; }
+      .login-select { padding: 12px 14px; font-size: 1rem; }
+      .login-btn { padding: 14px; font-size: 1rem; margin-top: 16px; }
+      .login-hero-icon { font-size: 60px; }
+      .login-hero { margin-bottom: 24px; }
+      /* report table ปรับขนาดตัวอักษร */
+      .report-table { font-size: 0.75rem; }
+      .report-table thead th { padding: 8px 4px; }
+      .report-table tbody td { padding: 8px 4px; }
+      /* loading overlay ใหญ่ชัด */
+      .loading-overlay .spinner-border { width: 2.5rem; height: 2.5rem; }
+    }
+
+    /* บนจอใหญ่ (แท็บเล็ต/เดสก์ท็อป) — ขยายขนาด */
+    @media (min-width: 992px) {
+      .container { max-width: 920px; }
     }
   </style>
 </head>
@@ -324,7 +381,7 @@
             </div>
             
             <div class="card p-0 overflow-hidden border-0 shadow-sm">
-              <div v-if="loading" class="text-center py-5"><div class="spinner-border text-primary border-2"></div></div>
+              <div v-if="loading" class="text-center py-5 text-muted small">กำลังโหลด...</div>
               <ul class="list-group list-group-flush" v-else>
                 <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3" v-for="item in summaryList" :key="item.date">
                   <span class="fw-bold fs-6 text-dark"><i class="fa-regular fa-calendar text-secondary me-2"></i>{{ formatShortDate(item.date) }}</span>
@@ -439,8 +496,8 @@
 
         <div v-if="page === 'report'" class="row justify-content-center">
           <div class="col-12">
-            <div v-if="loading" class="text-center py-5"><div class="spinner-border text-primary border-2"></div></div>
-            
+            <div v-if="loading" class="text-center py-5 text-muted small">กำลังโหลด...</div>
+
             <div v-else>
               <h5 class="text-success fw-bold text-center mb-4"><i class="fa-solid fa-circle-check me-2"></i>บันทึกข้อมูลเรียบร้อย</h5>
               <div class="bg-white p-4 rounded shadow-sm border mb-4 text-start mx-auto" style="font-size: 1.05rem; line-height: 1.8; max-width: 600px;">
@@ -525,7 +582,7 @@
           </button>
         </div>
 
-        <div v-if="loading" class="text-center py-5"><div class="spinner-border text-primary border-2"></div></div>
+        <div v-if="loading" class="text-center py-5 text-muted small">กำลังโหลด...</div>
 
         <div v-else-if="editList.length === 0" class="card p-5 text-center text-muted">
           <i class="fa-solid fa-folder-open fs-1 mb-3 text-secondary opacity-50"></i><br>

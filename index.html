@@ -4,78 +4,189 @@
   <meta charset="UTF-8">
   <title>Cenpay Alert Checking</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- ✅ Preconnect ทำ DNS+TLS handshake ล่วงหน้า (เร็วขึ้น ~100-300ms) -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- ✅ CSS ที่จำเป็นต่อ render ก่อน -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
-  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- ✅ Vue + Bootstrap ต้องโหลดก่อน inline script ด้านล่าง -->
+  <script src="https://unpkg.com/vue@2.6.14/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- ✅ xlsx + html2canvas ใช้ทีหลัง — defer ให้ไม่บล็อกหน้าแรก -->
+  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
   <style>
-    body { font-family: 'Sarabun', sans-serif; background-color: #f8f9fa; color: #333; }
-    
+    /* ====== 🌸 Rose/Coral พาสเทล — Design Tokens ====== */
+    :root {
+      --rose-50:  #fff1f2;
+      --rose-100: #ffe4e6;
+      --rose-200: #fecdd3;
+      --rose-300: #fda4af;
+      --rose-400: #fb7185;
+      --rose-500: #f43f5e;
+      --rose-600: #e11d48;
+      --rose-700: #be123c;
+      --ink-900:  #1f2937;
+      --ink-700:  #374151;
+      --ink-500:  #6b7280;
+      --ink-300:  #d1d5db;
+      --surface:  #ffffff;
+      --bg:       #fff5f6;
+      --shadow-sm: 0 2px 6px rgba(225, 29, 72, 0.06);
+      --shadow-md: 0 6px 18px rgba(225, 29, 72, 0.10);
+      --shadow-lg: 0 12px 30px rgba(225, 29, 72, 0.14);
+      --radius:   14px;
+    }
+
+    /* ====== ปรับ Bootstrap primary → Rose ====== */
+    .btn-primary {
+      background-color: var(--rose-500);
+      border-color: var(--rose-500);
+      color: #fff;
+    }
+    .btn-primary:hover, .btn-primary:focus {
+      background-color: var(--rose-600);
+      border-color: var(--rose-600);
+    }
+    .btn-outline-primary {
+      color: var(--rose-600);
+      border-color: var(--rose-300);
+    }
+    .btn-outline-primary:hover {
+      background-color: var(--rose-500);
+      border-color: var(--rose-500);
+      color: #fff;
+    }
+    .btn-success {
+      background-color: #fb7185;
+      border-color: #fb7185;
+    }
+    .btn-success:hover { background-color: var(--rose-500); border-color: var(--rose-500); }
+    .text-primary { color: var(--rose-600) !important; }
+    .bg-primary { background-color: var(--rose-500) !important; }
+    .bg-danger { background-color: var(--rose-600) !important; }
+    .border-primary { border-color: var(--rose-300) !important; }
+    .alert-primary {
+      color: var(--rose-700);
+      background-color: var(--rose-50);
+      border-color: var(--rose-200);
+    }
+    .alert-primary hr { border-top-color: var(--rose-300); }
+    .badge.bg-white.text-primary { color: var(--rose-600) !important; }
+    .offcanvas-header.bg-primary.text-white { background-color: var(--rose-500) !important; }
+
+    body { font-family: 'Sarabun', sans-serif; background-color: var(--bg); color: var(--ink-900); }
+
     .login-wrapper {
       min-height: 100vh; display: flex; align-items: center; justify-content: center;
-      background-color: #e9ecef; padding: 20px;
+      background: linear-gradient(135deg, var(--rose-100) 0%, var(--rose-50) 100%);
+      padding: 20px;
     }
     .login-card {
-      background: white; border-radius: 8px; border: 1px solid #dee2e6;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; width: 100%; max-width: 400px;
+      background: #fff; border-radius: var(--radius); border: 1px solid var(--rose-100);
+      box-shadow: var(--shadow-lg); overflow: hidden; width: 100%; max-width: 400px;
     }
     .login-header { padding: 30px 20px 10px; text-align: center; }
-    .login-icon { font-size: 40px; color: #0d6efd; margin-bottom: 15px; }
-    
-    .btn { border-radius: 6px; font-weight: 500; transition: all 0.2s ease-in-out; }
-    .btn:active { transform: scale(0.98); }
-    
+    .login-icon {
+      font-size: 44px;
+      background: linear-gradient(135deg, var(--rose-400), var(--rose-600));
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 15px;
+    }
+
+    .btn { border-radius: 10px; font-weight: 600; transition: transform .15s, box-shadow .15s, background-color .15s; }
+    .btn:hover:not(:disabled) { transform: translateY(-1px); }
+    .btn:active:not(:disabled) { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
     .app-wrapper { padding-top: 15px; }
-    .card { border-radius: 8px; border: 1px solid #e2e5e8; box-shadow: 0 2px 6px rgba(0,0,0,0.02); }
-    
+    .card { border-radius: var(--radius); border: 1px solid var(--rose-100); box-shadow: var(--shadow-sm); }
+
     .duplicate-alert { background-color: #fffaf0 !important; border: 1px solid #ffc107 !important; }
-    .navbar { box-shadow: 0 2px 4px rgba(0,0,0,0.04); background: #fff; border-bottom: 1px solid #eaeaea; }
-    
-    .form-select-sm, .form-control { border-radius: 6px; border-color: #ced4da; }
-    .form-select-sm:focus, .form-control:focus { border-color: #86b7fe; box-shadow: 0 0 0 0.25rem rgba(13,110,253,0.25); }
-    
-    /* สไตล์สำหรับการแจ้งเตือนช่องพนักงานแบบ Lock */
+    .navbar {
+      box-shadow: 0 2px 10px rgba(225, 29, 72, 0.06);
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: saturate(180%) blur(12px);
+      -webkit-backdrop-filter: saturate(180%) blur(12px);
+      border-bottom: 1px solid var(--rose-100);
+    }
+
+    .form-select-sm, .form-control {
+      border-radius: 10px; border-color: var(--rose-200);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .form-select-sm:focus, .form-control:focus {
+      border-color: var(--rose-400);
+      box-shadow: 0 0 0 0.25rem rgba(244, 63, 94, 0.15);
+    }
+
     .select-alert-locked {
-      background-color: #f8d7da !important;
-      color: #842029 !important;
-      border: 2px solid #dc3545 !important;
+      background-color: var(--rose-50) !important;
+      color: var(--rose-700) !important;
+      border: 2px solid var(--rose-500) !important;
       font-weight: bold;
     }
 
-    /* อนิเมชั่นกระพริบปุ่มตรวจสอบสีแดง */
     @keyframes pulse-red {
-      0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
-      70% { box-shadow: 0 0 0 8px rgba(220, 53, 69, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+      0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
     }
     .btn-alert-pulse {
       animation: pulse-red 1.5s infinite;
-      border: 2px solid #dc3545;
+      border: 2px solid var(--rose-500);
     }
-    
-    /* แต่งตาราง Report ให้สวยงามและปรับความคมชัดของตัวหนังสือ */
-    .report-table { 
-      border-collapse: collapse; 
-      width: 100%; 
-      font-size: 0.85rem; 
-      background-color: #fff; 
-      table-layout: fixed; 
-      text-rendering: optimizeLegibility;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-    }
-    .report-table thead th { 
-      background-color: #d6eaff !important; color: #004085 !important; 
-      text-align: center; vertical-align: middle; border: 1px solid #c2dbfe; font-weight: bold; padding: 12px 6px;
-    }
-    .report-table tbody td { vertical-align: middle; border: 1px solid #e9ecef; padding: 10px 8px; word-wrap: break-word; }
-    .report-table tbody tr:nth-child(even) { background-color: #f8f9fa; } 
 
-    /* อนิเมชั่นกระพริบตัวหนังสือ (เฉพาะใน Popup และ ตาราง Report) */
+    .report-table {
+      border-collapse: collapse; width: 100%; font-size: 0.85rem;
+      background-color: #fff; table-layout: fixed;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+    .report-table thead th {
+      background-color: var(--rose-100) !important; color: var(--rose-700) !important;
+      text-align: center; vertical-align: middle; border: 1px solid var(--rose-200);
+      font-weight: 700; padding: 12px 6px;
+    }
+    .report-table tbody td { vertical-align: middle; border: 1px solid var(--rose-100); padding: 10px 8px; word-wrap: break-word; }
+    .report-table tbody tr:nth-child(even) { background-color: var(--rose-50); }
+
     @keyframes blinker { 50% { opacity: 0; } }
     .blink-text { animation: blinker 1s linear infinite; }
+
+    /* ====== 🆕 ปรับปรุง UX ใหม่ ====== */
+    /* Fade transition ระหว่างหน้า */
+    .page-fade-enter-active, .page-fade-leave-active { transition: opacity .2s ease, transform .2s ease; }
+    .page-fade-enter { opacity: 0; transform: translateY(6px); }
+    .page-fade-leave-to { opacity: 0; transform: translateY(-6px); }
+
+    /* Loading overlay แบบเต็มจอ (ปุ่มกดแล้วตอบสนองทันที) */
+    .loading-overlay {
+      position: fixed; inset: 0; background: rgba(255, 241, 242, 0.75);
+      backdrop-filter: blur(2px); z-index: 1080;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: all;
+    }
+    .loading-overlay .spinner-border { width: 3rem; height: 3rem; color: var(--rose-500); border-width: .25em; }
+
+    /* Toast สำหรับแจ้ง error แทน alert() ที่บล็อก UI */
+    .toast-msg {
+      position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+      background: var(--rose-600); color: #fff; padding: 12px 20px; border-radius: 12px;
+      box-shadow: var(--shadow-md); font-weight: 500; z-index: 1090;
+      animation: toast-in .25s ease;
+      max-width: 90vw;
+    }
+    @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
   </style>
 </head>
 <body>
@@ -128,7 +239,9 @@
                   <span class="fw-bold fs-6 text-dark"><i class="fa-regular fa-calendar text-secondary me-2"></i>{{ formatShortDate(item.date) }}</span>
                   <span>
                     <span class="badge bg-danger rounded-pill me-3 fs-6 px-3 fw-normal">{{ item.count }} Txn</span>
-                    <button class="btn btn-primary btn-sm px-4" @click="startChecking(item.date)">ตรวจสอบ</button>
+                    <button class="btn btn-primary btn-sm px-4" @click="startChecking(item.date)" :disabled="loading">
+                      <span v-if="loading" class="spinner-border spinner-border-sm me-1"></span>ตรวจสอบ
+                    </button>
                   </span>
                 </li>
                 <li class="list-group-item text-center text-muted py-5 bg-light" v-if="summaryList.length === 0">
@@ -249,9 +362,9 @@
               </div>
               
               <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
-                <button class="btn btn-primary px-4 py-2" @click="shareReport"><i class="fa-solid fa-share-nodes me-2"></i>แชร์รูปภาพ</button>
+                <button class="btn btn-primary px-4 py-2" @click="shareReport" :disabled="showOverlay"><i class="fa-solid fa-share-nodes me-2"></i>แชร์รูปภาพ</button>
                 <button class="btn btn-outline-primary px-4 py-2 bg-white" @click="copyReportMobile"><i class="fa-solid fa-copy me-2"></i>คัดลอกข้อความ</button>
-                <button class="btn btn-success px-4 py-2" @click="downloadExcel"><i class="fa-solid fa-file-excel me-2"></i>ดาวน์โหลด Excel</button>
+                <button class="btn btn-success px-4 py-2" @click="downloadExcel" :disabled="showOverlay"><i class="fa-solid fa-file-excel me-2"></i>ดาวน์โหลด Excel</button>
               </div>
 
               <div class="mb-4" style="overflow-x: auto;">
@@ -325,7 +438,7 @@
                 <span class="badge bg-success px-2 fw-normal">{{ h.total }} Txn</span>
               </div>
               <div class="text-danger small mb-3 fw-bold bg-danger bg-opacity-10 p-1 rounded px-2" v-if="h.abnormal > 0"><i class="fa-solid fa-circle-exclamation me-1"></i>ผิดปกติ {{ h.abnormal }} รายการ</div>
-              <button class="btn btn-sm btn-outline-primary w-100" @click="viewHistoryDetail(h.date)">ดูรายงาน / ดาวน์โหลด Excel</button>
+              <button class="btn btn-sm btn-outline-primary w-100" @click="viewHistoryDetail(h.date)" :disabled="loading">ดูรายงาน / ดาวน์โหลด Excel</button>
             </div>
           </div>
         </div>
@@ -390,6 +503,18 @@
       </div>
     </div>
 
+    <!-- ✅ Loading overlay — แสดงทันทีเมื่อกำลังเรียก API -->
+    <transition name="page-fade">
+      <div v-if="showOverlay" class="loading-overlay">
+        <div class="spinner-border" role="status"></div>
+      </div>
+    </transition>
+
+    <!-- ✅ Toast สำหรับแจ้ง error/success แทน alert() -->
+    <transition name="page-fade">
+      <div v-if="toast.msg" class="toast-msg">{{ toast.msg }}</div>
+    </transition>
+
   </div>
 
   <script>
@@ -407,9 +532,13 @@
         checkedResults: [], checkedDate: '',
         reportSummary: { totalTxn: 0, abnormalCount: 0, employeeCount: 0 },
         detailData: [],
-        
+
         empModal: null,
-        selectedTxn: null
+        selectedTxn: null,
+
+        // ✅ UX: state ใหม่สำหรับ overlay + toast
+        showOverlay: false,
+        toast: { msg: '', timer: null }
       },
       computed: {
         currentStore() { return this.stores[this.currentStoreIndex] || { transactions: [] }; },
@@ -425,7 +554,8 @@
       methods: {
         async fetchAMList() {
           this.isFetchingAMs = true;
-          const list = await this.callAPI({ action: 'getAMList' });
+          // ไม่แสดง overlay — เพราะเป็นการโหลดเงียบ ๆ ตอนเปิดเว็บ
+          const list = await this.callAPI({ action: 'getAMList' }, { overlay: false });
           if (list && list.length > 0) {
             this.amList = list.filter(am => am !== 'AM_LOGIN' && am !== 'AREACODE');
           } else { this.amList = []; }
@@ -473,19 +603,37 @@
           return costs[s2.length];
         },
 
-        async callAPI(payload) {
+        // ✅ แสดง toast สั้น ๆ แทน alert() ที่บล็อก UI
+        showToast(msg, ms = 2500) {
+          if (this.toast.timer) clearTimeout(this.toast.timer);
+          this.toast.msg = msg;
+          this.toast.timer = setTimeout(() => { this.toast.msg = ''; }, ms);
+        },
+
+        async callAPI(payload, opts = {}) {
+          // opts.overlay = true ถ้าต้องการแสดง loading แบบเต็มจอ
+          const useOverlay = opts.overlay !== false;
+          if (useOverlay) this.showOverlay = true;
           try {
+            // ⚡ Yield 1 frame ให้ browser render overlay ก่อน fetch (สัมผัสลื่น)
+            await new Promise(r => requestAnimationFrame(r));
+
             const response = await fetch(API_URL, {
               method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload)
             });
             const result = await response.json();
             if(result.status === 'success') return result.data;
             else throw new Error(result.message);
-          } catch (e) { alert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + e.message); return null; }
+          } catch (e) {
+            this.showToast('⚠️ เชื่อมต่อไม่สำเร็จ: ' + e.message, 3500);
+            return null;
+          } finally {
+            if (useOverlay) this.showOverlay = false;
+          }
         },
 
         async loadSummary() {
-          if(!this.amCode) { return; } 
+          if(!this.amCode) { return; }
           this.loading = true; this.page = 'home';
           this.fetchHistory();
           this.summaryList = await this.callAPI({ action: 'getSummary', amCode: this.amCode }) || [];
@@ -494,7 +642,7 @@
         
         async fetchHistory() {
           this.loadingHistory = true;
-          this.historyList = await this.callAPI({ action: 'getHistory', amCode: this.amCode }) || [];
+          this.historyList = await this.callAPI({ action: 'getHistory', amCode: this.amCode }, { overlay: false }) || [];
           this.loadingHistory = false;
         },
         
@@ -505,20 +653,24 @@
         
         async startChecking(date) {
           this.loading = true; this.checkedDate = date;
-          const txns = await this.callAPI({ action: 'getTransactions', date: date, amCode: this.amCode }) || [];
+          this.showOverlay = true;
+          // yield 1 frame ให้ overlay render ก่อนโหลดหนัก
+          await new Promise(r => requestAnimationFrame(r));
+
+          const txns = await this.callAPI({ action: 'getTransactions', date: date, amCode: this.amCode }, { overlay: false }) || [];
           const storeGroups = {};
-          
+
           txns.forEach(t => {
             if (!storeGroups[t.StoreCode]) {
               storeGroups[t.StoreCode] = { StoreCode: t.StoreCode, StoreNameE: t.StoreNameE, transactions: [] };
             }
             t.cleanNameStr = this.cleanName(t.Ref1);
-            t.isDuplicate = false; 
-            
+            t.isDuplicate = false;
+
             let autoEmployee = !!t.Depositor_Name;
-            
-            t.checkData = { 
-              Type: autoEmployee ? 'พนักงาน' : '', 
+
+            t.checkData = {
+              Type: autoEmployee ? 'พนักงาน' : '',
               Cash_Exist: '', Is_Abnormal: '',
               Receiver_Emp_ID: t.Receiver_Emp_ID || '',
               Depositor_Emp_ID: t.Depositor_Emp_ID || '',
@@ -526,12 +678,12 @@
               Depositor_Position: t.Depositor_Position || '',
               Remark: ''
             };
-            
-            t.originalData = { 
+
+            t.originalData = {
               Receiver_Emp_ID: t.Receiver_Emp_ID || '', Depositor_Emp_ID: t.Depositor_Emp_ID || '',
               Depositor_Name: t.Depositor_Name || '', Depositor_Position: t.Depositor_Position || ''
             };
-            
+
             t.isAutoEmployee = autoEmployee;
 
             storeGroups[t.StoreCode].transactions.push(t);
@@ -551,7 +703,9 @@
 
           this.stores = Object.values(storeGroups);
           this.currentStoreIndex = 0; this.checkedResults = [];
-          this.page = 'checking'; this.loading = false;
+          this.page = 'checking';
+          this.loading = false;
+          this.showOverlay = false;
         },
         
         openEmployeeModal(txn) {
@@ -600,17 +754,21 @@
         shareReport() {
           const captureElement = document.getElementById('reportCapture');
           if (!captureElement) return;
-          this.copyReportMobile(false); 
-          alert('ระบบได้คัดลอกข้อความสรุปผลให้แล้วครับ\n\nเมื่อกดเข้าแอป LINE ให้กดค้างที่ช่องพิมพ์ แล้วเลือก "วาง" (Paste) เพื่อส่งข้อความไปพร้อมกับรูปภาพได้เลยครับ');
+          this.copyReportMobile(false);
+          this.showToast('📋 คัดลอกข้อความสรุปแล้ว — เปิด LINE แล้วกดวางได้เลย', 3500);
 
           const blinkEls = captureElement.querySelectorAll('.blink-text');
           blinkEls.forEach(el => el.style.animation = 'none');
+
+          // ✅ แสดง overlay ขณะ html2canvas ทำงาน (scale 3 = หนัก)
+          this.showOverlay = true;
 
           // ปรับ scale เป็น 3 และใช้เป็น PNG
           html2canvas(captureElement, { scale: 3, backgroundColor: '#ffffff', useCORS: true }).then(canvas => {
             blinkEls.forEach(el => el.style.animation = '');
             const fileName = `Cenpay_Table_${this.amCode}_${this.checkedDate.replace(/\//g, '-')}.png`;
             canvas.toBlob((blob) => {
+              this.showOverlay = false;
               if (!blob) return;
               const file = new File([blob], fileName, { type: 'image/png' });
               if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -618,7 +776,9 @@
               } else { this.fallbackDownload(canvas, fileName); }
             }, 'image/png');
           }).catch(err => {
-            blinkEls.forEach(el => el.style.animation = ''); alert('เกิดข้อผิดพลาด: ' + err.message);
+            blinkEls.forEach(el => el.style.animation = '');
+            this.showOverlay = false;
+            this.showToast('⚠️ เกิดข้อผิดพลาด: ' + err.message, 3500);
           });
         },
 
@@ -633,15 +793,15 @@
           document.body.appendChild(textArea); textArea.focus(); textArea.select();
           try {
             const successful = document.execCommand('copy');
-            if (successful && showAlert) { alert('คัดลอกข้อความสำเร็จแล้ว นำไปวางได้เลยครับ!'); } 
+            if (successful && showAlert) { this.showToast('✅ คัดลอกข้อความแล้ว นำไปวางได้เลย!'); }
           } catch (err) {
-            if (navigator.clipboard) { navigator.clipboard.writeText(textToCopy).then(() => { if(showAlert) alert('คัดลอกข้อความสำเร็จแล้ว นำไปวางได้เลยครับ!'); }); }
+            if (navigator.clipboard) { navigator.clipboard.writeText(textToCopy).then(() => { if(showAlert) this.showToast('✅ คัดลอกข้อความแล้ว นำไปวางได้เลย!'); }); }
           }
           document.body.removeChild(textArea);
         },
         
         downloadExcel() {
-          if(!this.detailData || this.detailData.length === 0) return alert('ไม่พบข้อมูลสำหรับดาวน์โหลด');
+          if(!this.detailData || this.detailData.length === 0) { this.showToast('⚠️ ไม่พบข้อมูลสำหรับดาวน์โหลด'); return; }
           const excelData = [];
           
           excelData.push([

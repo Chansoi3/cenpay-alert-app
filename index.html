@@ -234,17 +234,14 @@
     .blink-text { animation: blinker 1s linear infinite; }
 
     /* ====== 🆕 ลายน้ำ (watermark) ====== */
-    .watermark-layer {
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      display: flex; align-items: center; justify-content: center;
-      overflow: hidden;
-    }
-    .watermark-text {
-      font-size: clamp(3rem, 9vw, 7rem);
-      font-weight: 900; color: rgba(225, 29, 72, 0.06);
-      letter-spacing: 0.04em; transform: rotate(-20deg);
-      white-space: nowrap; user-select: none;
-      text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+    .watermark-corner {
+      position: fixed; bottom: 16px; left: 18px;
+      z-index: 0; pointer-events: none;
+      font-size: 0.85rem; font-weight: 600;
+      color: rgba(190, 18, 60, 0.35);
+      letter-spacing: 0.02em;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+      user-select: none;
     }
     .container { position: relative; z-index: 1; }
     .navbar { z-index: 1020; }
@@ -296,7 +293,7 @@
         <select class="login-select" v-model="amCode" :disabled="isFetchingAMs">
           <option value="" disabled>{{ isFetchingAMs ? 'กำลังดึงข้อมูลรายชื่อ...' : '- เลือกพื้นที่ (AM) -' }}</option>
           <option v-for="am in amList" :key="am" :value="am">
-            {{ amInfo[am] ? (am + ' — ' + amInfo[am]) : am }}
+            {{ amInfo[am] ? (am + ' ' + amInfo[am]) : am }}
           </option>
         </select>
         <button class="login-btn" @click="loadSummary" :disabled="!amCode || isFetchingAMs">
@@ -316,10 +313,8 @@
 
       <div class="container pb-5">
 
-        <!-- ✅ ลายน้ำหน้าหลัก -->
-        <div v-if="page === 'home'" class="watermark-layer">
-          <div class="watermark-text">AM404Piwirakorn</div>
-        </div>
+        <!-- ✅ ลายน้ำมุมล่างซ้าย -->
+        <div v-if="page === 'home'" class="watermark-corner">Power by PiWirakorn</div>
 
         <div v-if="page === 'home'" class="row justify-content-center">
           <div class="col-md-8 col-sm-12">

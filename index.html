@@ -1106,7 +1106,7 @@
           return this.historyList.reduce((s, h) => s + (h.total || 0), 0);
         },
         totalAbnormal() {
-          return this.historyList.reduce((s, h) => s + (h.abnormal || 0));
+          return this.historyList.reduce((s, h) => s + (h.abnormal || 0), 0);
         },
 
         // ✅ ประวัติที่กรองตามคำค้นหา

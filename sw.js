@@ -1,7 +1,7 @@
 // Service Worker สำหรับ Cenpay Alert PWA
 // ทำให้ติดตั้งเป็นแอปได้ + โหลดเร็วขึ้นผ่าน cache
 
-const CACHE_NAME = 'cenpay-alert-v1';
+const CACHE_NAME = 'cenpay-alert-v2';  // bump version บังคับล้าง cache เก่า
 const ASSETS = [
   './',
   './index.html',

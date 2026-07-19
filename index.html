@@ -503,6 +503,9 @@
 <body>
   <div id="app">
 
+    <!-- ✅ ลายน้ำมุมล่างซ้าย — แสดงทุกหน้า (ตั้งแต่ login) -->
+    <div class="watermark-corner">Power by PiWirakorn</div>
+
     <!-- 📲 PWA Install banner (แสดงเมื่อ browser อนุญาตให้ติดตั้ง) -->
     <transition name="page-fade">
       <div v-if="showInstallBanner" class="install-banner show">
@@ -624,17 +627,12 @@
                   </span>
                 </div>
                 <div class="mb-3">
-                  <div class="mb-1 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <div class="text-dark"><strong>ชื่อบัญชี:</strong> <span :class="{'text-danger fw-bold': txn.isDuplicate}">{{ txn.Ref1 }}</span></div>
-                    <button class="btn btn-sm btn-outline-primary py-1 px-2" @click="openDepositModal(txn.Ref1)">
-                      <i class="fa-solid fa-clock-rotate-left me-1"></i>เช็คประวัตินำฝาก
-                    </button>
-                  </div>
+                  <div class="mb-1 text-dark"><strong>ชื่อบัญชี:</strong> <span :class="{'text-danger fw-bold': txn.isDuplicate}">{{ txn.Ref1 }}</span></div>
                   <div>
-                    <strong>ยอดเงิน:</strong> <span class="text-success fw-bold">{{ formatAmount(txn.Amount) }} ฿</span>
-                    <span class="mx-2 text-muted">|</span>
-                    <strong>Txn:</strong> <span class="text-primary">{{ txn.Txn }}</span>
-                    <span class="mx-2 text-muted">|</span>
+                    <strong>ยอดเงิน:</strong> <span class="text-success fw-bold">{{ formatAmount(txn.Amount) }} ฿</span> 
+                    <span class="mx-2 text-muted">|</span> 
+                    <strong>Txn:</strong> <span class="text-primary">{{ txn.Txn }}</span> 
+                    <span class="mx-2 text-muted">|</span> 
                     <strong>ธนาคาร:</strong> <span class="badge bg-secondary fw-normal">{{ txn.BillType }}</span>
                   </div>
                 </div>
@@ -802,12 +800,7 @@
             </div>
 
             <div class="mb-2">
-              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div class="text-dark"><strong>ชื่อบัญชี:</strong> {{ txn.Ref1 }}</div>
-                <button class="btn btn-sm btn-outline-primary py-1 px-2" @click="openDepositModal(txn.Ref1)">
-                  <i class="fa-solid fa-clock-rotate-left me-1"></i>เช็คประวัตินำฝาก
-                </button>
-              </div>
+              <div class="text-dark"><strong>ชื่อบัญชี:</strong> {{ txn.Ref1 }}</div>
               <div><strong>ยอด:</strong> <span class="text-success fw-bold">{{ formatAmount(txn.Amount) }} ฿</span>
                 <span class="mx-2 text-muted">|</span>
                 <strong>Txn:</strong> <span class="text-primary">{{ txn.Txn }}</span></div>
@@ -968,78 +961,6 @@
       </div>
     </div>
 
-    <!-- ====== 📜 Modal ประวัตินำฝาก (1 เดือนย้อนหลัง) ====== -->
-    <div class="modal fade" id="depositModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg">
-          <div class="modal-header bg-primary text-white">
-            <h5 class="modal-title fs-6">
-              <i class="fa-solid fa-clock-rotate-left me-2"></i>ประวัตินำฝาก (30 วันย้อนหลัง)
-            </h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body bg-light">
-            <div class="alert alert-info py-2 mb-3">
-              <i class="fa-solid fa-user me-1"></i>
-              <strong>ชื่อบัญชี:</strong> {{ depositTargetName }}
-            </div>
-
-            <div v-if="depositLoading" class="text-center py-4">
-              <div class="spinner-border text-primary"></div>
-              <div class="text-muted mt-2">กำลังค้นหา...</div>
-            </div>
-
-            <div v-else-if="depositList.length === 0" class="text-center text-muted py-4">
-              <i class="fa-solid fa-folder-open fs-1 mb-3 d-block opacity-50"></i>
-              <strong>ไม่พบประวัตินำฝาก</strong><br>
-              <small>ชื่อบัญชีนี้ไม่เคยนำฝากใน 30 วันที่ผ่านมา</small>
-            </div>
-
-            <div v-else>
-              <div class="alert alert-warning py-2 mb-3">
-                <i class="fa-solid fa-triangle-exclamation me-1"></i>
-                พบ <strong>{{ depositList.length }}</strong> รายการนำฝากย้อนหลัง
-                <span v-if="depositList.filter(d => d.Is_Abnormal === 'ใช่').length > 0" class="text-danger fw-bold">
-                  • มี {{ depositList.filter(d => d.Is_Abnormal === 'ใช่').length }} รายการผิดปกติ
-                </span>
-              </div>
-
-              <div class="table-responsive">
-                <table class="table table-sm table-bordered bg-white mb-0">
-                  <thead class="table-dark">
-                    <tr>
-                      <th>วันที่</th>
-                      <th>สาขา</th>
-                      <th>ยอด</th>
-                      <th>ประเภท</th>
-                      <th>ผิดปกติ</th>
-                      <th>AM</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="(d, i) in depositList" :key="i">
-                      <td>{{ formatShortDate(d.date) }}</td>
-                      <td>{{ d.StoreCode }} {{ d.StoreNameE }}</td>
-                      <td class="text-end">{{ formatAmount(d.Amount) }}</td>
-                      <td>{{ d.Type }}</td>
-                      <td>
-                        <span v-if="d.Is_Abnormal === 'ใช่'" class="badge bg-danger">ผิดปกติ</span>
-                        <span v-else class="badge bg-success">ปกติ</span>
-                      </td>
-                      <td>{{ d.AM_Login }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer bg-light border-top-0">
-            <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">ปิด</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- ✅ Loading overlay — แสดงทันทีเมื่อกำลังเรียก API -->
     <transition name="page-fade">
       <div v-if="showOverlay" class="loading-overlay">
@@ -1075,12 +996,6 @@
 
         empModal: null,
         selectedTxn: null,
-
-        // ✅ Modal ประวัตินำฝาก
-        depositModal: null,
-        depositLoading: false,
-        depositList: [],
-        depositTargetName: '',
 
         // ✅ UX: state ใหม่สำหรับ overlay + toast
         showOverlay: false,
@@ -1124,7 +1039,6 @@
         this.fetchAMList();
         this.fetchAMInfo();
         this.empModal = new bootstrap.Modal(document.getElementById('employeeModal'));
-        this.depositModal = new bootstrap.Modal(document.getElementById('depositModal'));
 
         // ✅ PWA: ดักจับ beforeinstallprompt
         window.addEventListener('beforeinstallprompt', (e) => {
@@ -1325,18 +1239,6 @@
         openEmployeeModal(txn) {
           this.selectedTxn = txn;
           this.empModal.show();
-        },
-
-        // ✅ เปิด modal ประวัตินำฝาก 1 เดือนย้อนหลัง
-        async openDepositModal(ref1) {
-          this.depositTargetName = ref1;
-          this.depositList = [];
-          if (this.depositModal) this.depositModal.show();
-
-          this.depositLoading = true;
-          const result = await this.callAPI({ action: 'getDepositHistory', ref1: ref1 }, { overlay: false });
-          this.depositList = Array.isArray(result) ? result : [];
-          this.depositLoading = false;
         },
 
         async nextStore() {

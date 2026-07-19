@@ -4,10 +4,17 @@
   <meta charset="UTF-8">
   <title>Cenpay Alert Checking</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
-  <meta name="theme-color" content="#f43f5e">
+  <meta name="theme-color" content="#e63946">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Cenpay Alert">
+
+  <!-- ✅ PWA manifest + icons -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <link rel="apple-touch-icon" href="assets/icon-180.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="assets/icon-192.png">
 
   <!-- ✅ Preconnect ทำ DNS+TLS handshake ล่วงหน้า (เร็วขึ้น ~100-300ms) -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -439,52 +446,6 @@
       .stat-label { font-size: 0.7rem; }
     }
 
-    /* ====== 📈 Mini bar chart (Dashboard) ====== */
-    .chart-card {
-      background: #fff;
-      border: 2.5px solid var(--c-ink);
-      border-radius: 14px;
-      box-shadow: 4px 4px 0 var(--c-ink);
-      padding: 16px; margin-bottom: 18px;
-    }
-    .chart-title {
-      font-weight: 700; color: var(--c-red-dark);
-      margin-bottom: 12px; font-size: 1rem;
-    }
-    .chart-bars {
-      display: flex; align-items: flex-end;
-      gap: 6px; height: 130px; padding: 8px 4px 0;
-      border-bottom: 2.5px solid var(--c-ink);
-    }
-    .chart-bar-wrap {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: flex-end;
-      height: 100%; position: relative;
-    }
-    .chart-bar {
-      width: 70%; min-height: 2px;
-      background: var(--c-red);
-      border: 2px solid var(--c-ink);
-      border-radius: 6px 6px 0 0;
-      transition: height .4s cubic-bezier(.2,.8,.2,1);
-      position: relative;
-    }
-    .chart-bar.highlight { background: var(--c-yellow); }
-    .chart-bar-num {
-      position: absolute; top: -22px; left: 50%;
-      transform: translateX(-50%);
-      font-size: 0.75rem; font-weight: 700;
-      color: var(--c-ink); white-space: nowrap;
-    }
-    .chart-labels {
-      display: flex; gap: 6px; padding: 6px 4px 0;
-    }
-    .chart-label {
-      flex: 1; text-align: center;
-      font-size: 0.7rem; font-weight: 600;
-      color: var(--c-muted);
-    }
-
     /* ====== 🔍 Search box ใน history ====== */
     .search-box {
       width: 100%; padding: 10px 14px 10px 38px;
@@ -500,6 +461,43 @@
       transform: translate(-1px, -1px);
       box-shadow: 3px 3px 0 var(--c-ink);
     }
+
+    /* ====== 📲 PWA Install banner ====== */
+    .install-banner {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--c-yellow);
+      border-top: 2.5px solid var(--c-ink);
+      padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+      display: flex; align-items: center; gap: 12px;
+      z-index: 1050;
+      box-shadow: 0 -4px 0 rgba(29,29,29,.2);
+      transform: translateY(100%);
+      transition: transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .install-banner.show { transform: translateY(0); }
+    .install-banner-icon {
+      width: 44px; height: 44px;
+      border: 2px solid var(--c-ink); border-radius: 10px;
+      flex-shrink: 0;
+    }
+    .install-banner-text { flex: 1; }
+    .install-banner-title { font-weight: 700; color: var(--c-ink); font-size: .95rem; }
+    .install-banner-sub { font-size: .8rem; color: var(--c-ink-soft); }
+    .install-banner-actions { display: flex; gap: 8px; }
+    .install-banner-actions button {
+      padding: 8px 16px; border-radius: 10px;
+      font-weight: 700; font-family: var(--font-cute);
+      cursor: pointer; font-size: .9rem;
+    }
+    .install-banner-actions .btn-install {
+      background: var(--c-red); color: #fff;
+      border: 2px solid var(--c-ink);
+      box-shadow: 3px 3px 0 var(--c-ink);
+    }
+    .install-banner-actions .btn-dismiss {
+      background: transparent; color: var(--c-ink);
+      border: 0;
+    }
   </style>
 </head>
 <body>
@@ -507,6 +505,21 @@
 
     <!-- ✅ ลายน้ำมุมล่างซ้าย — แสดงทุกหน้า (ตั้งแต่ login) -->
     <div class="watermark-corner">Power by PiWirakorn</div>
+
+    <!-- 📲 PWA Install banner (แสดงเมื่อ browser อนุญาตให้ติดตั้ง) -->
+    <transition name="page-fade">
+      <div v-if="showInstallBanner" class="install-banner show">
+        <img src="assets/icon-192.png" alt="logo" class="install-banner-icon">
+        <div class="install-banner-text">
+          <div class="install-banner-title">ติดตั้ง Cenpay Alert</div>
+          <div class="install-banner-sub">เปิดเหมือนแอป ใช้งานง่ายขึ้น</div>
+        </div>
+        <div class="install-banner-actions">
+          <button class="btn-dismiss" @click="dismissInstall">ไม่ใช่ตอนนี้</button>
+          <button class="btn-install" @click="installApp">ติดตั้ง</button>
+        </div>
+      </div>
+    </transition>
 
     <div v-if="page === 'login'" class="login-fullscreen">
       <div class="login-hero">
@@ -563,22 +576,6 @@
               <div class="stat-card">
                 <div class="stat-num yellow">{{ totalAbnormal }}</div>
                 <div class="stat-label">ผิดปกติ (รวม)</div>
-              </div>
-            </div>
-
-            <!-- 📈 Mini Bar Chart — ยอดผิดปกติ 7 วันล่าสุด -->
-            <div class="chart-card" v-if="chartData.length > 0">
-              <div class="chart-title"><i class="fa-solid fa-chart-column me-2"></i>ยอดผิดปกติรายวัน</div>
-              <div class="chart-bars">
-                <div class="chart-bar-wrap" v-for="(d, i) in chartData" :key="i">
-                  <div class="chart-bar" :class="{ highlight: i === chartData.length - 1 }"
-                       :style="{ height: (d.count / maxChartVal * 100) + '%' }">
-                    <span class="chart-bar-num" v-if="d.count > 0">{{ d.count }}</span>
-                  </div>
-                </div>
-              </div>
-              <div class="chart-labels">
-                <div class="chart-label" v-for="(d, i) in chartData" :key="i">{{ formatShortDate(d.date).slice(0,5) }}</div>
               </div>
             </div>
 
@@ -1002,7 +999,11 @@
 
         // ✅ UX: state ใหม่สำหรับ overlay + toast
         showOverlay: false,
-        toast: { msg: '', timer: null }
+        toast: { msg: '', timer: null },
+
+        // ✅ PWA install prompt
+        showInstallBanner: false,
+        deferredInstallPrompt: null
       },
       computed: {
         currentStore() { return this.stores[this.currentStoreIndex] || { transactions: [] }; },
@@ -1020,20 +1021,7 @@
           return this.historyList.reduce((s, h) => s + (h.total || 0), 0);
         },
         totalAbnormal() {
-          return this.historyList.reduce((s, h) => s + (h.abnormal || 0), 0);
-        },
-        // ✅ ข้อมูลกราฟ — แปลง history (เรียงใหม่→เก่า) → เก่า→ใหม่ แล้วตัด 7 วันล่าสุด
-        chartData() {
-          const sorted = [...this.historyList].sort((a, b) => {
-            const da = this.parseShortDate(a.date);
-            const db = this.parseShortDate(b.date);
-            return da - db;
-          });
-          return sorted.slice(-7);
-        },
-        maxChartVal() {
-          const m = Math.max(1, ...this.chartData.map(d => d.count || 0));
-          return m;
+          return this.historyList.reduce((s, h) => s + (h.abnormal || 0));
         },
 
         // ✅ ประวัติที่กรองตามคำค้นหา
@@ -1051,6 +1039,20 @@
         this.fetchAMList();
         this.fetchAMInfo();
         this.empModal = new bootstrap.Modal(document.getElementById('employeeModal'));
+
+        // ✅ PWA: ดักจับ beforeinstallprompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+          e.preventDefault();
+          this.deferredInstallPrompt = e;
+          // แสดง banner หลังจากผู้ใช้ login แล้ว หรือตลอดเวลา (ที่นี่ตลอด)
+          this.showInstallBanner = true;
+        });
+        // ถ้าติดตั้งแล้ว → ซ่อน banner
+        window.addEventListener('appinstalled', () => {
+          this.showInstallBanner = false;
+          this.deferredInstallPrompt = null;
+          this.showToast('✅ ติดตั้งแอปเรียบร้อย!');
+        });
       },
       methods: {
         async fetchAMList() {
@@ -1084,16 +1086,6 @@
           return str;
         },
 
-        // ✅ แปลง "dd/MM/yy" → Date object (สำหรับ sort ในกราฟ)
-        parseShortDate(val) {
-          if (!val) return new Date(0);
-          const parts = val.toString().split('/');
-          if (parts.length !== 3) return new Date(0);
-          let [d, m, y] = parts.map(Number);
-          if (y < 100) y += 2000;
-          return new Date(y, m - 1, d);
-        },
-        
         similarity(s1, s2) {
           let longer = s1; let shorter = s2;
           if (s1.length < s2.length) { longer = s2; shorter = s1; }
@@ -1126,6 +1118,24 @@
           if (this.toast.timer) clearTimeout(this.toast.timer);
           this.toast.msg = msg;
           this.toast.timer = setTimeout(() => { this.toast.msg = ''; }, ms);
+        },
+
+        // ✅ PWA: เรียก prompt ติดตั้ง
+        async installApp() {
+          if (!this.deferredInstallPrompt) {
+            this.showToast('💡 เปิดเมนูเบราว์เซอร์ → "เพิ่มไปยังหน้าจอหลัก"', 3500);
+            return;
+          }
+          this.deferredInstallPrompt.prompt();
+          const { outcome } = await this.deferredInstallPrompt.userChoice;
+          if (outcome === 'accepted') {
+            this.showToast('กำลังติดตั้ง...');
+          }
+          this.deferredInstallPrompt = null;
+          this.showInstallBanner = false;
+        },
+        dismissInstall() {
+          this.showInstallBanner = false;
         },
 
         async callAPI(payload, opts = {}) {
@@ -1385,6 +1395,15 @@
         }
       }
     });
+
+    // ✅ Register Service Worker (สำหรับ PWA)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./sw.js')
+          .then(function (reg) { console.log('✅ SW registered:', reg.scope); })
+          .catch(function (err) { console.log('SW registration failed:', err); });
+      });
+    }
   </script>
 </body>
 </html>

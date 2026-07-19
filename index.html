@@ -146,7 +146,10 @@
       position: relative; z-index: 1;
     }
     .login-mascot {
-      width: 130px; height: 130px;
+      display: block;
+      width: 160px; height: auto;
+      max-height: 160px;
+      object-fit: contain;
       margin: 0 auto 16px;
       filter: drop-shadow(0 10px 24px rgba(225,57,70,.3));
       animation: mascot-bounce 3s ease-in-out infinite;
@@ -512,43 +515,8 @@
 
     <div v-if="page === 'login'" class="login-fullscreen">
       <div class="login-hero">
-        <!-- 🐥 Mascot SVG: เด็กหัวคม ใส่เสื้อเหลืองแดง (สไตล์การ์ตูนน่ารัก ปลอดลิขสิทธิ์) -->
-        <svg class="login-mascot" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-          <!-- หัวคม ๆ (รูปไข่แนวตั้ง) -->
-          <ellipse cx="100" cy="80" rx="48" ry="60" fill="#ffd9b3" stroke="#1d1d1d" stroke-width="4"/>
-          <!-- ผมสั้นดำขอบบน -->
-          <path d="M 56 50 Q 60 18 100 16 Q 140 18 144 50 Q 130 32 100 30 Q 70 32 56 50 Z" fill="#1d1d1d"/>
-          <!-- หูทั้งสองข้าง -->
-          <circle cx="52" cy="80" r="8" fill="#ffd9b3" stroke="#1d1d1d" stroke-width="4"/>
-          <circle cx="148" cy="80" r="8" fill="#ffd9b3" stroke="#1d1d1d" stroke-width="4"/>
-          <!-- คิ้วเข้ม -->
-          <rect x="70" y="65" width="20" height="4" rx="2" fill="#1d1d1d"/>
-          <rect x="110" y="65" width="20" height="4" rx="2" fill="#1d1d1d"/>
-          <!-- ตากลม -->
-          <circle cx="80" cy="80" r="5" fill="#1d1d1d"/>
-          <circle cx="120" cy="80" r="5" fill="#1d1d1d"/>
-          <circle cx="82" cy="78" r="1.5" fill="#fff"/>
-          <circle cx="122" cy="78" r="1.5" fill="#fff"/>
-          <!-- แก้มแดง -->
-          <circle cx="68" cy="95" r="7" fill="#ff8a8a" opacity="0.7"/>
-          <circle cx="132" cy="95" r="7" fill="#ff8a8a" opacity="0.7"/>
-          <!-- ปากยิ้มเล็ก -->
-          <path d="M 88 105 Q 100 113 112 105" stroke="#1d1d1d" stroke-width="3.5" fill="none" stroke-linecap="round"/>
-          <!-- ลำตัว — เสื้อเหลือง -->
-          <path d="M 60 135 Q 100 125 140 135 L 148 180 L 52 180 Z" fill="#ffd23f" stroke="#1d1d1d" stroke-width="4"/>
-          <!-- แถบแดงกลางเสื้อ -->
-          <rect x="50" y="150" width="100" height="14" fill="#e63946" stroke="#1d1d1d" stroke-width="3"/>
-          <!-- แขนเสื้อทั้งสองข้าง -->
-          <ellipse cx="48" cy="148" rx="10" ry="14" fill="#ffd23f" stroke="#1d1d1d" stroke-width="4"/>
-          <ellipse cx="152" cy="148" rx="10" ry="14" fill="#ffd23f" stroke="#1d1d1d" stroke-width="4"/>
-          <!-- มือโบก -->
-          <circle cx="40" cy="140" r="9" fill="#ffd9b3" stroke="#1d1d1d" stroke-width="4"/>
-          <circle cx="160" cy="155" r="9" fill="#ffd9b3" stroke="#1d1d1d" stroke-width="4"/>
-          <!-- มือขวา (โบกสวัสดี) -->
-          <circle cx="160" cy="140" r="9" fill="#ffd9b3" stroke="#1d1d1d" stroke-width="4" opacity="0">
-            <animate attributeName="opacity" values="1;1" dur="0.1s" fill="freeze"/>
-          </circle>
-        </svg>
+        <!-- 🐥 Logo ของคุณ -->
+        <img src="assets/logo.png" alt="Cenpay Alert Logo" class="login-mascot">
         <h1 class="login-hero-title">Cenpay Alert</h1>
         <p class="login-hero-sub">ระบบตรวจสอบรายการผิดปกติ</p>
       </div>
@@ -570,15 +538,7 @@
     <div v-else class="app-wrapper">
       <nav class="navbar mb-4 px-3 d-flex justify-content-between sticky-top">
         <span class="navbar-brand mb-0 h6 text-primary fw-bold">
-          <svg width="22" height="22" viewBox="0 0 200 200" style="vertical-align: -3px; margin-right: 4px;">
-            <ellipse cx="100" cy="80" rx="48" ry="60" fill="#ffd9b3" stroke="#1d1d1d" stroke-width="8"/>
-            <path d="M 56 50 Q 60 18 100 16 Q 140 18 144 50 Q 130 32 100 30 Q 70 32 56 50 Z" fill="#1d1d1d"/>
-            <circle cx="80" cy="80" r="8" fill="#1d1d1d"/>
-            <circle cx="120" cy="80" r="8" fill="#1d1d1d"/>
-            <path d="M 88 105 Q 100 115 112 105" stroke="#1d1d1d" stroke-width="6" fill="none" stroke-linecap="round"/>
-            <path d="M 60 135 Q 100 125 140 135 L 148 180 L 52 180 Z" fill="#ffd23f" stroke="#1d1d1d" stroke-width="6"/>
-            <rect x="50" y="150" width="100" height="14" fill="#e63946" stroke="#1d1d1d" stroke-width="4"/>
-          </svg>
+          <img src="assets/logo.png" alt="logo" style="width: 28px; height: auto; vertical-align: -7px; margin-right: 6px;">
           Cenpay Alert
         </span>
         <button class="btn btn-primary btn-sm px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarHistory">

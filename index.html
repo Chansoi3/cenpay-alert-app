@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Cenpay Alert Checking</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5">
+  <meta name="theme-color" content="#e63946">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Cenpay Alert">
+
+  <!-- ✅ PWA manifest + icons -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <link rel="apple-touch-icon" href="assets/icon-180.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="assets/icon-192.png">
+
+  <!-- ✅ Preconnect ทำ DNS+TLS handshake ล่วงหน้า (เร็วขึ้น ~100-300ms) -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <!-- ✅ CSS ที่จำเป็นต่อ render ก่อน -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- ✅ Vue + Bootstrap ต้องโหลดก่อน inline script ด้านล่าง -->
+  <script src="https://unpkg.com/vue@2.6.14/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- ✅ xlsx + html2canvas ใช้ทีหลัง — defer ให้ไม่บล็อกหน้าแรก -->
+  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+  <style>
+    /* ====== 🌸 Shin-chan Vibe — Design Tokens (ปลอดลิขสิทธิ์) ====== */
+    /* โทน: เหลืองสด + แดงสด + ดำเข้ม + ครีม (เหมือนเสื้อชินจัง + หัวคม) */
+    :root {
+      /* สีหลัก — แดงเสื้อ */
+      --c-red:        #e63946;
+      --c-red-dark:   #c1121f;
+      --c-red-light:  #ff5d6c;
+      /* สีรอง — เหลืองเสื้อ */
+      --c-yellow:     #ffd23f;
+      --c-yellow-deep:#f9c80e;
+      /* สีพื้น + ตัวอักษร */
+      --c-cream:      #fff8e7;
+      --c-bg:         #fff4d6;
+      --c-ink:        #1d1d1d;
+      --c-ink-soft:   #4a4a4a;
+      --c-muted:      #7a7a7a;
+      --c-line:       #f0d9a3;
+      /* alias สำหรับโค้ดเก่าที่ใช้ rose-xxx */
+      --rose-50:  #fff8e7;
+      --rose-100: #ffedc2;
+      --rose-200: #ffe0a0;
+      --rose-300: #ffc870;
+      --rose-400: #ff8a5b;
+      --rose-500: #e63946;
+      --rose-600: #c1121f;
+      --rose-700: #8b0000;
+      --ink-900:  #1d1d1d;
+      --ink-700:  #4a4a4a;
+      --ink-500:  #7a7a7a;
+      --ink-300:  #d1d1d1;
+      --surface:  #ffffff;
+      --bg:       #fff4d6;
+      --shadow-sm: 0 2px 8px rgba(225, 57, 70, 0.10);
+      --shadow-md: 0 6px 20px rgba(225, 57, 70, 0.16);
+      --shadow-lg: 0 14px 32px rgba(225, 57, 70, 0.22);
+      --radius:   16px;
+      --font-cute: 'Mali', 'Sarabun', sans-serif;
+    }
+
+    /* ====== ปรับ Bootstrap primary → แดง Shin-chan ====== */
+    .btn-primary {
+      background-color: var(--c-red);
+      border-color: var(--c-red);
+      color: #fff;
+    }
+    .btn-primary:hover, .btn-primary:focus {
+      background-color: var(--c-red-dark);
+      border-color: var(--c-red-dark);
+    }
+    .btn-outline-primary {
+      color: var(--c-red-dark);
+      border-color: var(--c-red-light);
+    }
+    .btn-outline-primary:hover {
+      background-color: var(--c-red);
+      border-color: var(--c-red);
+      color: #fff;
+    }
+    .btn-success {
+      background-color: var(--c-yellow-deep);
+      border-color: var(--c-yellow-deep);
+      color: var(--c-ink);
+    }
+    .btn-success:hover { background-color: var(--c-yellow); border-color: var(--c-yellow); color: var(--c-ink); }
+    .text-primary { color: var(--c-red-dark) !important; }
+    .bg-primary { background-color: var(--c-red) !important; }
+    .bg-danger { background-color: var(--c-red-dark) !important; }
+    .border-primary { border-color: var(--c-red-light) !important; }
+    .alert-primary {
+      color: var(--c-red-dark);
+      background-color: var(--c-cream);
+      border-color: var(--c-yellow);
+    }
+    .alert-primary hr { border-top-color: var(--c-yellow-deep); }
+    .badge.bg-white.text-primary { color: var(--c-red-dark) !important; }
+    .offcanvas-header.bg-primary.text-white { background-color: var(--c-red) !important; }
+
+    body {
+      font-family: var(--font-cute);
+      background-color: var(--c-bg);
+      background-image:
+        radial-gradient(circle at 20% 10%, rgba(255, 210, 63, 0.25) 0%, transparent 35%),
+        radial-gradient(circle at 80% 90%, rgba(230, 57, 70, 0.15) 0%, transparent 40%);
+      background-attachment: fixed;
+      color: var(--c-ink);
+    }
+
+    /* ====== 🌸 Login — Shin-chan Vibe ====== */
+    .login-fullscreen {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background:
+        radial-gradient(circle at 0% 0%, #ffd23f 0%, transparent 35%),
+        radial-gradient(circle at 100% 100%, #ff5d6c 0%, transparent 45%),
+        linear-gradient(135deg, #fff8e7 0%, #ffe8a8 100%);
+      padding: 24px;
+      overflow: hidden;
+    }
+    /* decorative blobs */
+    .login-fullscreen::before, .login-fullscreen::after {
+      content: ''; position: absolute; border-radius: 50%;
+      filter: blur(70px); opacity: 0.5; pointer-events: none;
+    }
+    .login-fullscreen::before {
+      width: 380px; height: 380px; background: #ffd23f;
+      top: -120px; right: -100px;
+    }
+    .login-fullscreen::after {
+      width: 320px; height: 320px; background: #e63946;
+      bottom: -100px; left: -80px;
+    }
+    .login-hero {
+      text-align: center; margin-bottom: 32px;
+      position: relative; z-index: 1;
+    }
+    .login-mascot {
+      display: block;
+      width: 160px; height: auto;
+      max-height: 160px;
+      object-fit: contain;
+      margin: 0 auto 16px;
+      filter: drop-shadow(0 8px 16px rgba(225,57,70,.25));
+    }
+    .login-hero-title {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 700; color: var(--c-red-dark);
+      margin: 0 0 6px; letter-spacing: -0.01em;
+      text-shadow: 2px 2px 0 var(--c-yellow);
+    }
+    .login-hero-sub {
+      font-size: 1.1rem; color: var(--c-ink-soft); margin: 0; font-weight: 500;
+    }
+    .login-form {
+      width: 100%; max-width: 420px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 3px solid var(--c-ink);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 8px 8px 0 var(--c-ink);
+      position: relative; z-index: 1;
+    }
+    .login-label {
+      display: block; font-weight: 700; font-size: .95rem;
+      color: var(--c-ink); margin-bottom: 10px;
+    }
+    .login-select {
+      width: 100%; padding: 14px 16px;
+      border: 2.5px solid var(--c-ink); border-radius: 14px;
+      background: #fff; color: var(--c-ink);
+      font-size: 1.05rem; font-weight: 600;
+      font-family: var(--font-cute);
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%231d1d1d' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center;
+      transition: transform .15s, box-shadow .15s;
+    }
+    .login-select:focus {
+      outline: none;
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0 var(--c-ink);
+    }
+    .login-btn {
+      width: 100%; margin-top: 20px;
+      padding: 16px;
+      border: 2.5px solid var(--c-ink); border-radius: 14px;
+      background: var(--c-red);
+      color: #fff; font-size: 1.1rem; font-weight: 700;
+      font-family: var(--font-cute);
+      cursor: pointer;
+      box-shadow: 5px 5px 0 var(--c-ink);
+      transition: transform .12s, box-shadow .12s;
+    }
+    .login-btn:hover:not(:disabled) {
+      transform: translate(-2px, -2px);
+      box-shadow: 7px 7px 0 var(--c-ink);
+    }
+    .login-btn:active:not(:disabled) {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0 var(--c-ink);
+    }
+    .login-btn:disabled { opacity: .55; cursor: not-allowed; }
+
+    /* ====== 🎀 Neo-brutalist card / button — ขอบดำ + shadow เด้ง ====== */
+    .btn { border-radius: 12px; font-weight: 700; font-family: var(--font-cute);
+           transition: transform .12s, box-shadow .12s, background-color .15s; }
+    .btn:hover:not(:disabled) { transform: translate(-1px, -1px); }
+    .btn:active:not(:disabled) { transform: translate(1px, 1px); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    /* ปุ่มหลักมี shadow ดำ */
+    .btn-primary, .btn-success {
+      border: 2.5px solid var(--c-ink);
+      box-shadow: 4px 4px 0 var(--c-ink);
+    }
+    .btn-primary:hover:not(:disabled), .btn-success:hover:not(:disabled) {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0 var(--c-ink);
+    }
+    .btn-primary:active:not(:disabled), .btn-success:active:not(:disabled) {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0 var(--c-ink);
+    }
+    .btn-outline-primary, .btn-outline-secondary, .btn-outline-danger {
+      border: 2px solid var(--c-ink);
+      box-shadow: 3px 3px 0 var(--c-ink);
+      font-weight: 700;
+    }
+    .btn-outline-primary:hover:not(:disabled), .btn-outline-secondary:hover:not(:disabled) {
+      transform: translate(-2px, -2px);
+      box-shadow: 5px 5px 0 var(--c-ink);
+    }
+
+    .app-wrapper { padding-top: 15px; }
+    .card {
+      border-radius: var(--radius);
+      border: 2.5px solid var(--c-ink);
+      box-shadow: 5px 5px 0 var(--c-ink);
+      background: #fff;
+      transition: transform .15s;
+    }
+    .card:hover { transform: translate(-1px, -1px); }
+
+    .duplicate-alert { background-color: #fffaf0 !important; border: 2px solid var(--c-yellow-deep) !important; }
+    .navbar {
+      box-shadow: 0 4px 0 var(--c-ink);
+      background: var(--c-yellow);
+      border-bottom: 2.5px solid var(--c-ink);
+      font-family: var(--font-cute);
+      font-weight: 700;
+    }
+    .navbar-brand, .navbar .text-primary { color: var(--c-red-dark) !important; }
+
+    .form-select-sm, .form-control {
+      border-radius: 10px; border: 2px solid var(--c-ink);
+      font-family: var(--font-cute); font-weight: 600;
+      transition: transform .12s, box-shadow .12s;
+    }
+    .form-select-sm:focus, .form-control:focus {
+      border-color: var(--c-ink);
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0 var(--c-ink);
+    }
+
+    .select-alert-locked {
+      background-color: var(--rose-50) !important;
+      color: var(--rose-700) !important;
+      border: 2px solid var(--rose-500) !important;
+      font-weight: bold;
+    }
+
+    @keyframes pulse-red {
+      0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(244, 63, 94, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+    }
+    .btn-alert-pulse {
+      animation: pulse-red 1.5s infinite;
+      border: 2px solid var(--rose-500);
+    }
+
+    .report-table {
+      border-collapse: collapse; width: 100%; font-size: 0.85rem;
+      background-color: #fff; table-layout: fixed;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+    }
+    .report-table thead th {
+      background-color: var(--rose-100) !important; color: var(--rose-700) !important;
+      text-align: center; vertical-align: middle; border: 1px solid var(--rose-200);
+      font-weight: 700; padding: 12px 6px;
+    }
+    .report-table tbody td { vertical-align: middle; border: 1px solid var(--rose-100); padding: 10px 8px; word-wrap: break-word; }
+    .report-table tbody tr:nth-child(even) { background-color: var(--rose-50); }
+
+    @keyframes blinker { 50% { opacity: 0; } }
+    .blink-text { animation: blinker 1s linear infinite; }
+
+    /* ====== 🆕 ลายน้ำ (watermark) — Shin-chan vibe ====== */
+    .watermark-corner {
+      position: fixed;
+      bottom: max(8px, env(safe-area-inset-bottom));
+      left: max(10px, env(safe-area-inset-left));
+      z-index: 9999;
+      pointer-events: none;
+      font-size: 0.95rem;
+      font-weight: 700;
+      font-family: var(--font-cute);
+      color: var(--c-red-dark);
+      letter-spacing: 0.02em;
+      text-shadow: 0 1px 2px rgba(255,255,255,0.9), 0 0 5px rgba(255,255,255,0.7);
+      user-select: none;
+      padding: 6px 12px;
+      background: rgba(255, 210, 63, 0.85);
+      border: 2px solid var(--c-ink);
+      border-radius: 10px;
+      box-shadow: 3px 3px 0 rgba(29,29,29,0.4);
+    }
+    /* บนจอเล็ก (มือถือ) — ขยายขนาดให้อ่านง่าย */
+    @media (max-width: 576px) {
+      .watermark-corner {
+        font-size: 0.85rem;
+        bottom: 6px;
+        left: 6px;
+        padding: 4px 8px;
+      }
+    }
+    /* บนจอใหญ่ — ใหญ่ขึ้น */
+    @media (min-width: 992px) {
+      .watermark-corner { font-size: 1.05rem; }
+    }
+    .container { position: relative; z-index: 1; }
+    .navbar { z-index: 1020; }
+
+    /* ====== 🆕 ปรับปรุง UX ใหม่ ====== */
+    /* Fade transition ระหว่างหน้า */
+    .page-fade-enter-active, .page-fade-leave-active { transition: opacity .2s ease, transform .2s ease; }
+    .page-fade-enter { opacity: 0; transform: translateY(6px); }
+    .page-fade-leave-to { opacity: 0; transform: translateY(-6px); }
+
+    /* Loading overlay แบบเต็มจอ (ปุ่มกดแล้วตอบสนองทันที) */
+    .loading-overlay {
+      position: fixed; inset: 0; background: rgba(255, 244, 214, 0.78);
+      backdrop-filter: blur(3px); z-index: 1080;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: all;
+    }
+    .loading-overlay .spinner-border { width: 3.5rem; height: 3.5rem; color: var(--c-red); border-width: .3em; }
+
+    /* Toast สำหรับแจ้ง error/success — Shin-chan vibe */
+    .toast-msg {
+      position: fixed; top: 24px; left: 50%; transform: translateX(-50%);
+      background: var(--c-red); color: #fff;
+      padding: 16px 28px; border-radius: 14px;
+      font-weight: 700; font-size: 1.05rem;
+      font-family: var(--font-cute);
+      z-index: 1100;
+      animation: toast-in .3s cubic-bezier(.2,.8,.2,1);
+      max-width: 92vw; text-align: center;
+      border: 2.5px solid var(--c-ink);
+      box-shadow: 5px 5px 0 var(--c-ink);
+    }
+    @keyframes toast-in {
+      from { opacity: 0; transform: translate(-50%, -24px) scale(0.95); }
+      to   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    }
+
+    /* ====== 📱 Mobile responsive optimizations ====== */
+    @media (max-width: 576px) {
+      /* ลด padding รอบเนื้อหาในมือถือ */
+      .app-wrapper { padding-top: 10px; }
+      .container { padding-left: 14px; padding-right: 14px; }
+      .card { margin-bottom: 0.75rem !important; }
+      .row { --bs-gutter-x: 0.5rem; }
+      /* ปุ่มใหญ่ขึ้น แตะง่าย */
+      .btn-sm { padding: 8px 12px; font-size: 0.9rem; }
+      /* toast ขยายเต็มจอในมือถือ */
+      .toast-msg { font-size: 0.95rem; padding: 12px 18px; max-width: 96vw; }
+      /* login ปรับขนาด */
+      .login-form { padding: 22px; }
+      .login-select { padding: 12px 14px; font-size: 1rem; }
+      .login-btn { padding: 14px; font-size: 1rem; margin-top: 16px; }
+      .login-hero-icon { font-size: 60px; }
+      .login-hero { margin-bottom: 24px; }
+      /* report table ปรับขนาดตัวอักษร */
+      .report-table { font-size: 0.75rem; }
+      .report-table thead th { padding: 8px 4px; }
+      .report-table tbody td { padding: 8px 4px; }
+      /* loading overlay ใหญ่ชัด */
+      .loading-overlay .spinner-border { width: 2.5rem; height: 2.5rem; }
+    }
+
+    /* บนจอใหญ่ (แท็บเล็ต/เดสก์ท็อป) — ขยายขนาด */
+    @media (min-width: 992px) {
+      .container { max-width: 920px; }
+    }
+
+    /* ====== 📊 Stats cards (Quick stats หน้าแรก) ====== */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 10px; margin-bottom: 20px;
+    }
+    .stat-card {
+      background: #fff;
+      border: 2.5px solid var(--c-ink);
+      border-radius: 14px;
+      box-shadow: 4px 4px 0 var(--c-ink);
+      padding: 14px 10px; text-align: center;
+      transition: transform .15s;
+    }
+    .stat-card:hover { transform: translate(-2px, -2px); }
+    .stat-num {
+      font-size: 1.8rem; font-weight: 700;
+      font-family: var(--font-cute); line-height: 1;
+      margin-bottom: 4px;
+    }
+    .stat-num.red    { color: var(--c-red-dark); }
+    .stat-num.yellow { color: var(--c-yellow-deep); }
+    .stat-num.ink    { color: var(--c-ink); }
+    .stat-label {
+      font-size: 0.75rem; font-weight: 600;
+      color: var(--c-muted);
+    }
+    @media (max-width: 576px) {
+      .stats-grid { gap: 8px; }
+      .stat-num { font-size: 1.4rem; }
+      .stat-label { font-size: 0.7rem; }
+    }
+
+    /* ====== 🔍 Search box ใน history ====== */
+    .search-box {
+      width: 100%; padding: 10px 14px 10px 38px;
+      border: 2px solid var(--c-ink); border-radius: 12px;
+      font-family: var(--font-cute); font-weight: 500;
+      background: #fff;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%231d1d1d' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: 12px center;
+      transition: transform .12s, box-shadow .12s;
+    }
+    .search-box:focus {
+      outline: none;
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0 var(--c-ink);
+    }
+
+    /* ====== 📲 PWA Install banner ====== */
+    .install-banner {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--c-yellow);
+      border-top: 2.5px solid var(--c-ink);
+      padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+      display: flex; align-items: center; gap: 12px;
+      z-index: 1050;
+      box-shadow: 0 -4px 0 rgba(29,29,29,.2);
+      transform: translateY(100%);
+      transition: transform .3s cubic-bezier(.2,.8,.2,1);
+    }
+    .install-banner.show { transform: translateY(0); }
+    .install-banner-icon {
+      width: 44px; height: 44px;
+      border: 2px solid var(--c-ink); border-radius: 10px;
+      flex-shrink: 0;
+    }
+    .install-banner-text { flex: 1; }
+    .install-banner-title { font-weight: 700; color: var(--c-ink); font-size: .95rem; }
+    .install-banner-sub { font-size: .8rem; color: var(--c-ink-soft); }
+    .install-banner-actions { display: flex; gap: 8px; }
+    .install-banner-actions button {
+      padding: 8px 16px; border-radius: 10px;
+      font-weight: 700; font-family: var(--font-cute);
+      cursor: pointer; font-size: .9rem;
+    }
+    .install-banner-actions .btn-install {
+      background: var(--c-red); color: #fff;
+      border: 2px solid var(--c-ink);
+      box-shadow: 3px 3px 0 var(--c-ink);
+    }
+    .install-banner-actions .btn-dismiss {
+      background: transparent; color: var(--c-ink);
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+
+    <!-- ✅ ลายน้ำมุมล่างซ้าย — แสดงทุกหน้า (ตั้งแต่ login) -->
+    <div class="watermark-corner">Power by PiWirakorn</div>
+
+    <!-- 📲 PWA Install banner (แสดงเมื่อ browser อนุญาตให้ติดตั้ง) -->
+    <transition name="page-fade">
+      <div v-if="showInstallBanner" class="install-banner show">
+        <img src="assets/icon-192.png" alt="logo" class="install-banner-icon">
+        <div class="install-banner-text">
+          <div class="install-banner-title">ติดตั้ง Cenpay Alert</div>
+          <div class="install-banner-sub">เปิดเหมือนแอป ใช้งานง่ายขึ้น</div>
+        </div>
+        <div class="install-banner-actions">
+          <button class="btn-dismiss" @click="dismissInstall">ไม่ใช่ตอนนี้</button>
+          <button class="btn-install" @click="installApp">ติดตั้ง</button>
+        </div>
+      </div>
+    </transition>
+
+    <div v-if="page === 'login'" class="login-fullscreen">
+      <div class="login-hero">
+        <!-- 🐥 Logo ของคุณ -->
+        <img src="assets/logo.png" alt="Cenpay Alert Logo" class="login-mascot">
+        <h1 class="login-hero-title">Cenpay Alert</h1>
+        <p class="login-hero-sub">ระบบตรวจสอบรายการผิดปกติ</p>
+      </div>
+      <div class="login-form">
+        <label class="login-label">เลือกรหัสผู้ตรวจสอบ (AM Code)</label>
+        <select class="login-select" v-model="amCode" :disabled="isFetchingAMs">
+          <option value="" disabled>{{ isFetchingAMs ? 'กำลังดึงข้อมูลรายชื่อ...' : '- เลือกพื้นที่ (AM) -' }}</option>
+          <option v-for="am in amList" :key="am" :value="am">
+            {{ amInfo[am] ? (am + ' ' + amInfo[am]) : am }}
+          </option>
+        </select>
+        <button class="login-btn" @click="loadSummary" :disabled="!amCode || isFetchingAMs">
+          <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
+          เข้าสู่ระบบ <i class="fa-solid fa-arrow-right ms-2"></i>
+        </button>
+      </div>
+    </div>
+
+    <div v-else class="app-wrapper">
+      <nav class="navbar mb-4 px-3 d-flex justify-content-between sticky-top">
+        <span class="navbar-brand mb-0 h6 text-primary fw-bold">
+          <img src="assets/logo.png" alt="logo" style="width: 28px; height: auto; vertical-align: -7px; margin-right: 6px;">
+          Cenpay Alert
+        </span>
+        <button class="btn btn-primary btn-sm px-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarHistory">
+          <i class="fa-solid fa-clock-rotate-left me-1"></i> ประวัติ
+        </button>
+      </nav>
+
+      <div class="container pb-5">
+
+        <div v-if="page === 'home'" class="row justify-content-center">
+          <div class="col-md-8 col-sm-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-house text-primary me-2"></i>{{ amInfo[amCode] || amCode }}</h5>
+              <button class="btn btn-outline-danger btn-sm" @click="page = 'login'">ออกจากระบบ</button>
+            </div>
+
+            <!-- 📊 Quick Stats Cards -->
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-num red">{{ totalPending }}</div>
+                <div class="stat-label">รอตรวจ (Txn)</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-num ink">{{ totalChecked }}</div>
+                <div class="stat-label">ตรวจแล้ว (Txn)</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-num yellow">{{ totalAbnormal }}</div>
+                <div class="stat-label">ผิดปกติ (รวม)</div>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-2 mt-3">
+              <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-list-check text-primary me-2"></i>รายการรอตรวจสอบ</h6>
+            </div>
+
+            <div class="card p-0 overflow-hidden">
+              <div v-if="loading" class="text-center py-5 text-muted small">กำลังโหลด...</div>
+              <ul class="list-group list-group-flush" v-else>
+                <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3" v-for="item in summaryList" :key="item.date">
+                  <span class="fw-bold fs-6 text-dark"><i class="fa-regular fa-calendar text-secondary me-2"></i>{{ formatShortDate(item.date) }}</span>
+                  <span>
+                    <span class="badge bg-danger rounded-pill me-3 fs-6 px-3 fw-normal">{{ item.count }} Txn</span>
+                    <button class="btn btn-primary btn-sm px-4" @click="startChecking(item.date)" :disabled="loading">
+                      <span v-if="loading" class="spinner-border spinner-border-sm me-1"></span>ตรวจสอบ
+                    </button>
+                  </span>
+                </li>
+                <li class="list-group-item text-center text-muted py-5 bg-light" v-if="summaryList.length === 0">
+                  <i class="fa-solid fa-circle-check fs-1 text-success mb-3 d-block"></i>
+                  คุณตรวจสอบรายการครบถ้วนทั้งหมดแล้ว เยี่ยมมาก!
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="page === 'checking'" class="row justify-content-center">
+          <div class="col-md-8 col-sm-12">
+            <div v-if="stores.length > 0">
+              
+              <div class="alert alert-primary shadow-sm mb-3 border-0" style="border-radius: 8px;">
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-primary border-opacity-25">
+                  <h6 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-store me-2"></i>{{ currentStore.StoreCode }} - {{ currentStore.StoreNameE }}</h6>
+                  <span class="badge bg-white text-primary border border-primary fw-normal">สาขาที่ {{ currentStoreIndex + 1 }} / {{ stores.length }}</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-2">
+                  <span class="text-dark fw-bold small"><i class="fa-regular fa-calendar me-1"></i> วันที่: {{ formatShortDate(checkedDate) }}</span>
+                  <span class="badge bg-danger fs-6 px-3 py-1 rounded-pill fw-normal">{{ currentStore.transactions.length }} Txn</span>
+                </div>
+              </div>
+
+              <div class="card p-3 mb-3 border-0 shadow-sm" v-for="(txn, idx) in currentStore.transactions" :key="idx" :class="{'duplicate-alert': txn.isDuplicate}">
+                <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                  <span class="text-secondary small fw-bold">รายการที่ {{ idx + 1 }}</span>
+                  <span class="badge bg-warning text-dark fw-normal" v-if="txn.isDuplicate">
+                    <i class="fa-solid fa-triangle-exclamation"></i> บัญชีซ้ำ/ชื่อใกล้เคียง
+                  </span>
+                </div>
+                <div class="mb-3">
+                  <div class="mb-1 text-dark"><strong>ชื่อบัญชี:</strong> <span :class="{'text-danger fw-bold': txn.isDuplicate}">{{ txn.Ref1 }}</span></div>
+                  <div>
+                    <strong>ยอดเงิน:</strong> <span class="text-success fw-bold">{{ formatAmount(txn.Amount) }} ฿</span> 
+                    <span class="mx-2 text-muted">|</span> 
+                    <strong>Txn:</strong> <span class="text-primary">{{ txn.Txn }}</span> 
+                    <span class="mx-2 text-muted">|</span> 
+                    <strong>ธนาคาร:</strong> <span class="badge bg-secondary fw-normal">{{ txn.BillType }}</span>
+                  </div>
+                </div>
+
+                <div class="row g-2 bg-light p-2 rounded border">
+                  <div class="col-12 col-md-4">
+                    <label class="form-label small mb-1 fw-bold" :class="txn.isAutoEmployee ? 'text-danger' : 'text-secondary'">ประเภทบัญชี</label>
+                    <select class="form-select form-select-sm" 
+                            :class="{'select-alert-locked': txn.isAutoEmployee}" 
+                            v-model="txn.checkData.Type" 
+                            :disabled="txn.isAutoEmployee">
+                      <option value="">-- เลือก --</option>
+                      <option value="พนักงาน">พนักงาน</option>
+                      <option value="ลูกค้า">ลูกค้า</option>
+                    </select>
+                    <div v-if="txn.isAutoEmployee" class="text-danger small mt-1 fw-bold" style="font-size: 0.75rem;">
+                      <i class="fa-solid fa-circle-exclamation"></i> ระบบตรวจพบชื่อพนักงาน
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label class="form-label small mb-1 text-secondary fw-bold">มีเงินสดหรือไม่</label>
+                    <select class="form-select form-select-sm" v-model="txn.checkData.Cash_Exist">
+                      <option value="">-- เลือก --</option>
+                      <option value="มี">มี</option>
+                      <option value="ไม่มี">ไม่มี</option>
+                    </select>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label class="form-label small mb-1 text-secondary fw-bold">พบความผิดปกติ</label>
+                    <select class="form-select form-select-sm" v-model="txn.checkData.Is_Abnormal">
+                      <option value="">-- เลือก --</option>
+                      <option value="ใช่">ใช่ (ผิดปกติ)</option>
+                      <option value="ไม่ใช่">ไม่ใช่ (ปกติ)</option>
+                    </select>
+                  </div>
+
+                  <div class="col-12 mt-2" v-if="txn.checkData.Type === 'พนักงาน'">
+                    <label class="form-label small mb-1 text-primary fw-bold"><i class="fa-solid fa-pen me-1"></i> หมายเหตุ (สำหรับพนักงาน)</label>
+                    <input type="text" class="form-control form-control-sm border-primary" v-model="txn.checkData.Remark" placeholder="ระบุหมายเหตุเพิ่มเติม (ถ้ามี)">
+                  </div>
+
+                  <div class="col-12 mt-2 pt-1 border-top" v-if="txn.checkData.Type === 'พนักงาน'">
+                    <button class="btn btn-sm w-100 fw-bold" 
+                            :class="txn.isAutoEmployee ? 'btn-danger btn-alert-pulse text-white' : 'btn-outline-primary'" 
+                            @click="openEmployeeModal(txn)">
+                      <i class="fa-solid fa-user-magnifying-glass me-2"></i> 
+                      {{ txn.isAutoEmployee ? 'กดเพื่อตรวจสอบข้อมูลพนักงาน (Alert!)' : 'ตรวจสอบ/กรอกข้อมูลพนักงานเพิ่มเติม' }}
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+              <div class="d-flex justify-content-between mt-4">
+                 <button class="btn btn-outline-secondary px-4 text-dark" @click="page = 'home'">ย้อนกลับ</button>
+                 <button class="btn btn-success px-4" @click="nextStore" :disabled="!isStoreValid || loading">
+                   <span v-if="loading" class="spinner-border spinner-border-sm me-1 border-2"></span>
+                   {{ currentStoreIndex === stores.length - 1 ? 'บันทึกการตรวจสอบ' : 'สาขาถัดไป' }} <i class="fa-solid fa-check ms-1" v-if="currentStoreIndex === stores.length - 1"></i><i class="fa-solid fa-arrow-right ms-1" v-else></i>
+                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="page === 'report'" class="row justify-content-center">
+          <div class="col-12">
+            <div v-if="loading" class="text-center py-5 text-muted small">กำลังโหลด...</div>
+
+            <div v-else>
+              <h5 class="text-success fw-bold text-center mb-4"><i class="fa-solid fa-circle-check me-2"></i>บันทึกข้อมูลเรียบร้อย</h5>
+              <div class="bg-white p-4 rounded shadow-sm border mb-4 text-start mx-auto" style="font-size: 1.05rem; line-height: 1.8; max-width: 600px;">
+                AM: <strong>{{ amCode }}</strong><br>
+                สรุปการตรวจสอบ Cenpay Alert<br>
+                วันที่: <strong>{{ formatShortDate(checkedDate) }}</strong><br>
+                จำนวนรวม = <strong>{{ formatAmount(reportSummary.totalTxn) }}</strong> Txn<br>
+                จำนวนบัญชีปลายทางที่ผิดปกติ = <strong class="text-danger">{{ formatAmount(reportSummary.abnormalCount) }}</strong> Txn<br>
+                บัญชีรับโอนเป็นพนักงานสาขา = <strong class="text-primary">{{ formatAmount(reportSummary.employeeCount) }}</strong> Txn
+              </div>
+              
+              <div class="d-flex flex-wrap justify-content-center gap-2 mb-4">
+                <button class="btn btn-primary px-4 py-2" @click="shareReport" :disabled="showOverlay"><i class="fa-solid fa-share-nodes me-2"></i>แชร์รูปภาพ</button>
+                <button class="btn btn-outline-primary px-4 py-2 bg-white" @click="copyReportMobile"><i class="fa-solid fa-copy me-2"></i>คัดลอกข้อความ</button>
+                <button class="btn btn-success px-4 py-2" @click="downloadExcel" :disabled="showOverlay"><i class="fa-solid fa-file-excel me-2"></i>ดาวน์โหลด Excel</button>
+              </div>
+
+              <div class="mb-4" style="overflow-x: auto;">
+                <div id="reportCapture" class="bg-white shadow-sm" style="padding: 20px; width: 1700px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                  <table class="report-table">
+                    <thead>
+                      <tr>
+                        <th style="width: 3%;">ลำดับ</th><th style="width: 5%;">วันที่</th><th style="width: 4%;">สาขา</th><th style="width: 9%;">ชื่อสาขา</th>
+                        <th style="width: 10%;">ชื่อบัญชีปลายทาง</th><th style="width: 6%;">จำนวนเงิน</th><th style="width: 6%;">ประเภทธนาคาร</th>
+                        <th style="width: 6%;">ประเภท</th><th style="width: 6%;">มีเงินสด</th><th style="width: 6%;">พบความผิดปกติ</th>
+                        <th style="width: 8%;">Receiver Emp ID</th><th style="width: 8%;">Depositor Emp ID</th><th style="width: 9%;">Depositor Name</th>
+                        <th style="width: 6%;">Depositor Position</th><th style="width: 8%;">หมายเหตุ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="(item, index) in detailData" :key="index">
+                        <td class="text-center">{{ index + 1 }}</td>
+                        <td class="text-center">{{ formatShortDate(item.date) }}</td>
+                        <td class="text-center">{{ item.StoreCode }}</td>
+                        <td class="text-start">{{ item.StoreNameE }}</td>
+                        <td class="text-start">{{ item.Ref1 }}</td>
+                        <td class="text-end pe-3">{{ formatAmount(item.Amount) }}</td>
+                        <td class="text-center">{{ item.BillType }}</td>
+                        
+                        <td class="text-center">
+                          <span v-if="item.Type === 'พนักงาน'" style="background-color: #fd7e14; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; display: inline-block;">พนักงาน</span>
+                          <span v-else>{{ item.Type }}</span>
+                        </td>
+                        
+                        <td class="text-center">{{ item.Cash_Exist }}</td>
+                        <td class="text-center">
+                          <span v-if="item.Is_Abnormal === 'ใช่'" style="background-color: #dc3545; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; display: inline-block;">ผิดปกติ</span>
+                          <span v-else style="background-color: #198754; color: white; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; display: inline-block;">ปกติ</span>
+                        </td>
+                        <td class="text-center" :class="{'text-danger fw-bold': item.Receiver_Emp_ID}">{{ item.Receiver_Emp_ID }}</td>
+                        <td class="text-center" :class="{'text-danger fw-bold': item.Depositor_Emp_ID}">{{ item.Depositor_Emp_ID }}</td>
+                        <td class="text-start" :class="{'blink-text text-danger fw-bold': item.Depositor_Name}">{{ item.Depositor_Name }}</td>
+                        <td class="text-start" :class="{'text-danger fw-bold': item.Depositor_Position}">{{ item.Depositor_Position }}</td>
+                        <td class="text-start text-primary small">{{ item.Remark }}</td>
+                      </tr>
+                      <tr v-if="detailData.length === 0"><td colspan="15" class="text-muted text-center py-4">ไม่พบข้อมูล</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              <div class="text-center pb-4">
+                <button class="btn btn-outline-secondary py-2 px-5 text-dark" @click="page = 'home'; loadSummary()"><i class="fa-solid fa-house me-2"></i>กลับหน้าหลัก</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ====== 🆕 หน้าแก้ไขข้อมูล (edit) ====== -->
+    <div v-if="page === 'edit'" class="row justify-content-center">
+      <div class="col-md-10 col-sm-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold text-dark mb-0">
+            <i class="fa-solid fa-pen-to-square text-primary me-2"></i>แก้ไขข้อมูล
+            <span class="text-muted small ms-2">{{ formatShortDate(checkedDate) }}</span>
+          </h5>
+          <button class="btn btn-outline-secondary btn-sm" @click="page = 'home'; loadSummary()">
+            <i class="fa-solid fa-xmark me-1"></i>ปิด
+          </button>
+        </div>
+
+        <div v-if="loading" class="text-center py-5 text-muted small">กำลังโหลด...</div>
+
+        <div v-else-if="editList.length === 0" class="card p-5 text-center text-muted">
+          <i class="fa-solid fa-folder-open fs-1 mb-3 text-secondary opacity-50"></i><br>
+          ไม่มีข้อมูลให้แก้ไขในวันที่นี้
+        </div>
+
+        <div v-else>
+          <div class="card p-3 mb-3 border-0 shadow-sm" v-for="(txn, idx) in editList" :key="txn.rowId">
+            <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+              <span class="text-secondary small fw-bold">รายการที่ {{ idx + 1 }} — {{ txn.StoreCode }} {{ txn.StoreNameE }}</span>
+              <span class="badge bg-secondary fw-normal">{{ txn.BillType }}</span>
+            </div>
+
+            <div class="mb-2">
+              <div class="text-dark"><strong>ชื่อบัญชี:</strong> {{ txn.Ref1 }}</div>
+              <div><strong>ยอด:</strong> <span class="text-success fw-bold">{{ formatAmount(txn.Amount) }} ฿</span>
+                <span class="mx-2 text-muted">|</span>
+                <strong>Txn:</strong> <span class="text-primary">{{ txn.Txn }}</span></div>
+            </div>
+
+            <div class="row g-2 bg-light p-2 rounded border">
+              <div class="col-12 col-md-4">
+                <label class="form-label small mb-1 fw-bold text-secondary">ประเภทบัญชี</label>
+                <select class="form-select form-select-sm" v-model="txn.Type">
+                  <option value="">-- เลือก --</option>
+                  <option value="พนักงาน">พนักงาน</option>
+                  <option value="ลูกค้า">ลูกค้า</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-4">
+                <label class="form-label small mb-1 fw-bold text-secondary">มีเงินสด</label>
+                <select class="form-select form-select-sm" v-model="txn.Cash_Exist">
+                  <option value="">-- เลือก --</option>
+                  <option value="มี">มี</option>
+                  <option value="ไม่มี">ไม่มี</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-4">
+                <label class="form-label small mb-1 fw-bold text-secondary">พบความผิดปกติ</label>
+                <select class="form-select form-select-sm" v-model="txn.Is_Abnormal">
+                  <option value="">-- เลือก --</option>
+                  <option value="ใช่">ใช่ (ผิดปกติ)</option>
+                  <option value="ไม่ใช่">ไม่ใช่ (ปกติ)</option>
+                </select>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small mb-1 fw-bold text-secondary">Receiver Emp ID</label>
+                <input type="text" class="form-control form-control-sm" v-model="txn.Receiver_Emp_ID">
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small mb-1 fw-bold text-secondary">Depositor Emp ID</label>
+                <input type="text" class="form-control form-control-sm" v-model="txn.Depositor_Emp_ID">
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small mb-1 fw-bold text-secondary">Depositor Name</label>
+                <input type="text" class="form-control form-control-sm" v-model="txn.Depositor_Name">
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small mb-1 fw-bold text-secondary">Depositor Position</label>
+                <input type="text" class="form-control form-control-sm" v-model="txn.Depositor_Position">
+              </div>
+              <div class="col-12">
+                <label class="form-label small mb-1 fw-bold text-secondary">หมายเหตุ</label>
+                <input type="text" class="form-control form-control-sm" v-model="txn.Remark">
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mt-4 sticky-bottom bg-white py-3">
+            <button class="btn btn-outline-secondary px-4" @click="page = 'home'; loadSummary()">
+              <i class="fa-solid fa-arrow-left me-1"></i>ยกเลิก
+            </button>
+            <button class="btn btn-success px-4" @click="saveEdits" :disabled="loading">
+              <span v-if="loading" class="spinner-border spinner-border-sm me-1 border-2"></span>
+              <i class="fa-solid fa-check me-1" v-else></i>บันทึกการแก้ไข
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="sidebarHistory">
+      <div class="offcanvas-header bg-primary text-white">
+        <h6 class="offcanvas-title mb-0"><i class="fa-solid fa-clock-rotate-left me-2"></i>ประวัติการตรวจสอบ</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" id="closeHistoryBtn"></button>
+      </div>
+      <div class="offcanvas-body bg-light p-3">
+        <h6 class="text-dark fw-bold mb-3 pb-2 border-bottom"><i class="fa-solid fa-user me-2 text-muted"></i>AM: {{ amCode }}</h6>
+
+        <!-- 🔍 Search box -->
+        <input v-model="historySearch" class="search-box mb-3" placeholder="ค้นหาวันที่ / จำนวน..." v-if="!loadingHistory && historyList.length > 0">
+
+        <div class="text-center mt-5" v-if="loadingHistory"><div class="spinner-border text-primary border-2"></div></div>
+        <div v-else>
+          <div v-if="historyList.length === 0" class="text-center text-muted mt-5"><i class="fa-solid fa-folder-open fs-1 mb-3 text-secondary opacity-50"></i><br>ไม่มีข้อมูลประวัติ</div>
+          <div v-else-if="filteredHistory.length === 0" class="text-center text-muted mt-4"><i class="fa-solid fa-magnifying-glass fs-3 mb-2 d-block opacity-50"></i>ไม่พบผลลัพธ์สำหรับ "{{ historySearch }}"</div>
+          <div class="card mb-3" v-for="h in filteredHistory" :key="h.date">
+            <div class="card-body p-3">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fw-bold text-dark"><i class="fa-regular fa-calendar me-2 text-primary"></i>{{ formatShortDate(h.date) }}</span>
+                <span class="badge bg-success px-2 fw-normal">{{ h.total }} Txn</span>
+              </div>
+              <div class="text-danger small mb-3 fw-bold bg-danger bg-opacity-10 p-1 rounded px-2" v-if="h.abnormal > 0"><i class="fa-solid fa-circle-exclamation me-1"></i>ผิดปกติ {{ h.abnormal }} รายการ</div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-primary flex-fill" @click="viewHistoryDetail(h.date)" :disabled="loading">
+                  <i class="fa-solid fa-file-lines me-1"></i>ดูรายงาน
+                </button>
+                <button class="btn btn-sm btn-primary flex-fill" @click="editHistoryDetail(h.date)" :disabled="loading">
+                  <i class="fa-solid fa-pen-to-square me-1"></i>แก้ไขข้อมูล
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="employeeModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title fs-6"><i class="fa-solid fa-id-card me-2"></i>รายละเอียดข้อมูลพนักงาน</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body bg-light" v-if="selectedTxn">
+            
+            <div class="alert alert-warning py-2 mb-3" v-if="selectedTxn.isAutoEmployee">
+              <i class="fa-solid fa-triangle-exclamation text-danger me-1"></i> <strong>ระบบดึงข้อมูลให้อัตโนมัติ</strong> (ไม่สามารถแก้ไขได้)
+            </div>
+
+            <div class="mb-3 bg-white p-2 rounded border">
+              <span class="text-secondary small fw-bold">ชื่อบัญชีปลายทาง:</span>
+              <div class="text-dark fw-bold">{{ selectedTxn.Ref1 }}</div>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <label class="form-label small mb-1 text-secondary fw-bold">Receiver Emp ID</label>
+                <input type="text" class="form-control"
+                       :class="{'text-danger fw-bold bg-white': selectedTxn.originalData.Receiver_Emp_ID}"
+                       :disabled="!!selectedTxn.originalData.Receiver_Emp_ID"
+                       v-model="selectedTxn.checkData.Receiver_Emp_ID">
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small mb-1 text-secondary fw-bold">Depositor Emp ID</label>
+                <input type="text" class="form-control"
+                       :class="{'text-danger fw-bold bg-white': selectedTxn.originalData.Depositor_Emp_ID}"
+                       :disabled="!!selectedTxn.originalData.Depositor_Emp_ID"
+                       v-model="selectedTxn.checkData.Depositor_Emp_ID">
+              </div>
+              <div class="col-12">
+                <label class="form-label small mb-1 text-secondary fw-bold">Depositor Name</label>
+                <input type="text" class="form-control"
+                       :class="{'blink-text text-danger fw-bold bg-white': selectedTxn.originalData.Depositor_Name, 'text-danger fw-bold bg-white': selectedTxn.originalData.Depositor_Name}"
+                       :disabled="!!selectedTxn.originalData.Depositor_Name"
+                       v-model="selectedTxn.checkData.Depositor_Name">
+              </div>
+              <div class="col-12">
+                <label class="form-label small mb-1 text-secondary fw-bold">Depositor Position</label>
+                <input type="text" class="form-control"
+                       :class="{'text-danger fw-bold bg-white': selectedTxn.originalData.Depositor_Position}"
+                       :disabled="!!selectedTxn.originalData.Depositor_Position"
+                       v-model="selectedTxn.checkData.Depositor_Position">
+              </div>
+            </div>
+
+          </div>
+          <div class="modal-footer bg-light border-top-0">
+            <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">ปิด</button>
+            <button type="button" class="btn btn-success px-4" data-bs-dismiss="modal"><i class="fa-solid fa-check me-1"></i> ยืนยันข้อมูล</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ✅ Loading overlay — แสดงทันทีเมื่อกำลังเรียก API -->
+    <transition name="page-fade">
+      <div v-if="showOverlay" class="loading-overlay">
+        <div class="spinner-border" role="status"></div>
+      </div>
+    </transition>
+
+    <!-- ✅ Toast สำหรับแจ้ง error/success แทน alert() -->
+    <transition name="page-fade">
+      <div v-if="toast.msg" class="toast-msg">{{ toast.msg }}</div>
+    </transition>
+
+  </div>
+
+  <script>
+    // ⚠️ ลิงก์ API ของคุณ (ยังใช้ตัวเดิมได้เลย)
+    const API_URL = "https://script.google.com/macros/s/AKfycbyEBdGgAxPi1WM1cRyQcvQsQCARcd35ty-MwrW22ivV-YZCSXmnqQXswSfSLv9987ZRYQ/exec"; 
+
+    new Vue({
+      el: '#app',
+      data: {
+        page: 'login',
+        amCode: '', amList: [], isFetchingAMs: true,
+        amInfo: {},   // ✅ { AM404: "Wirakorn Pingboon", ... }
+        loading: false, loadingHistory: false,
+        summaryList: [], historyList: [],
+        editList: [],   // ✅ รายการที่จะแก้ไขในหน้า edit
+        historySearch: '',  // ✅ text ค้นหาในประวัติ
+        stores: [], currentStoreIndex: 0,
+        checkedResults: [], checkedDate: '',
+        reportSummary: { totalTxn: 0, abnormalCount: 0, employeeCount: 0 },
+        detailData: [],
+
+        empModal: null,
+        selectedTxn: null,
+
+        // ✅ UX: state ใหม่สำหรับ overlay + toast
+        showOverlay: false,
+        toast: { msg: '', timer: null },
+
+        // ✅ PWA install prompt
+        showInstallBanner: false,
+        deferredInstallPrompt: null
+      },
+      computed: {
+        currentStore() { return this.stores[this.currentStoreIndex] || { transactions: [] }; },
+        isStoreValid() {
+          if(this.currentStore.transactions.length === 0) return false;
+          return this.currentStore.transactions.every(t => t.checkData.Type !== '' && t.checkData.Cash_Exist !== '' && t.checkData.Is_Abnormal !== '');
+        },
+
+        // ✅ รวม Txn ที่รอตรวจ
+        totalPending() {
+          return this.summaryList.reduce((s, x) => s + (x.count || 0), 0);
+        },
+        // ✅ รวม Txn ที่ตรวจแล้ว + ยอดผิดปกติ จาก history
+        totalChecked() {
+          return this.historyList.reduce((s, h) => s + (h.total || 0), 0);
+        },
+        totalAbnormal() {
+          return this.historyList.reduce((s, h) => s + (h.abnormal || 0));
+        },
+
+        // ✅ ประวัติที่กรองตามคำค้นหา
+        filteredHistory() {
+          if (!this.historySearch.trim()) return this.historyList;
+          const q = this.historySearch.trim().toLowerCase();
+          return this.historyList.filter(h =>
+            (h.date || '').toLowerCase().includes(q) ||
+            String(h.total || '').includes(q) ||
+            String(h.abnormal || '').includes(q)
+          );
+        }
+      },
+      mounted() {
+        this.fetchAMList();
+        this.fetchAMInfo();
+        this.empModal = new bootstrap.Modal(document.getElementById('employeeModal'));
+
+        // ✅ PWA: ดักจับ beforeinstallprompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+          e.preventDefault();
+          this.deferredInstallPrompt = e;
+          // แสดง banner หลังจากผู้ใช้ login แล้ว หรือตลอดเวลา (ที่นี่ตลอด)
+          this.showInstallBanner = true;
+        });
+        // ถ้าติดตั้งแล้ว → ซ่อน banner
+        window.addEventListener('appinstalled', () => {
+          this.showInstallBanner = false;
+          this.deferredInstallPrompt = null;
+          this.showToast('✅ ติดตั้งแอปเรียบร้อย!');
+        });
+      },
+      methods: {
+        async fetchAMList() {
+          this.isFetchingAMs = true;
+          const list = await this.callAPI({ action: 'getAMList' }, { overlay: false });
+          if (list && list.length > 0) {
+            this.amList = list.filter(am => am !== 'AM_LOGIN' && am !== 'AREACODE');
+          } else { this.amList = []; }
+          this.isFetchingAMs = false;
+        },
+
+        // ✅ ดึง mapping AM code → ชื่อ-นามสกุล
+        async fetchAMInfo() {
+          const info = await this.callAPI({ action: 'getAMInfo' }, { overlay: false });
+          if (info && typeof info === 'object') {
+            this.amInfo = info;
+          }
+        },
+
+        formatAmount(val) { return (!val) ? '0' : Number(val).toLocaleString('th-TH'); },
+        
+        formatShortDate(val) {
+          if (!val) return '';
+          let str = val.toString();
+          let parts = str.split('/');
+          if (parts.length === 3) {
+            let p1 = parts[0].padStart(2, '0'); let p2 = parts[1].padStart(2, '0'); let p3 = parts[2];
+            if (p3.length === 4) { p3 = p3.slice(-2); }
+            return `${p1}/${p2}/${p3}`;
+          }
+          return str;
+        },
+
+        similarity(s1, s2) {
+          let longer = s1; let shorter = s2;
+          if (s1.length < s2.length) { longer = s2; shorter = s1; }
+          let longerLength = longer.length;
+          if (longerLength == 0) return 1.0;
+          return (longerLength - this.editDistance(longer, shorter)) / parseFloat(longerLength);
+        },
+        editDistance(s1, s2) {
+          s1 = s1.toLowerCase(); s2 = s2.toLowerCase();
+          let costs = new Array();
+          for (let i = 0; i <= s1.length; i++) {
+            let lastValue = i;
+            for (let j = 0; j <= s2.length; j++) {
+              if (i == 0) costs[j] = j;
+              else {
+                if (j > 0) {
+                  let newValue = costs[j - 1];
+                  if (s1.charAt(i - 1) != s2.charAt(j - 1)) newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                  costs[j - 1] = lastValue; lastValue = newValue;
+                }
+              }
+            }
+            if (i > 0) costs[s2.length] = lastValue;
+          }
+          return costs[s2.length];
+        },
+
+        // ✅ แสดง toast สั้น ๆ แทน alert() ที่บล็อก UI
+        showToast(msg, ms = 2500) {
+          if (this.toast.timer) clearTimeout(this.toast.timer);
+          this.toast.msg = msg;
+          this.toast.timer = setTimeout(() => { this.toast.msg = ''; }, ms);
+        },
+
+        // ✅ PWA: เรียก prompt ติดตั้ง
+        async installApp() {
+          if (!this.deferredInstallPrompt) {
+            this.showToast('💡 เปิดเมนูเบราว์เซอร์ → "เพิ่มไปยังหน้าจอหลัก"', 3500);
+            return;
+          }
+          this.deferredInstallPrompt.prompt();
+          const { outcome } = await this.deferredInstallPrompt.userChoice;
+          if (outcome === 'accepted') {
+            this.showToast('กำลังติดตั้ง...');
+          }
+          this.deferredInstallPrompt = null;
+          this.showInstallBanner = false;
+        },
+        dismissInstall() {
+          this.showInstallBanner = false;
+        },
+
+        async callAPI(payload, opts = {}) {
+          // opts.overlay = true ถ้าต้องการแสดง loading แบบเต็มจอ
+          const useOverlay = opts.overlay !== false;
+          if (useOverlay) this.showOverlay = true;
+          try {
+            // ⚡ Yield 1 frame ให้ browser render overlay ก่อน fetch (สัมผัสลื่น)
+            await new Promise(r => requestAnimationFrame(r));
+
+            const response = await fetch(API_URL, {
+              method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if(result.status === 'success') return result.data;
+            else throw new Error(result.message);
+          } catch (e) {
+            this.showToast('⚠️ เชื่อมต่อไม่สำเร็จ: ' + e.message, 3500);
+            return null;
+          } finally {
+            if (useOverlay) this.showOverlay = false;
+          }
+        },
+
+        async loadSummary() {
+          if(!this.amCode) { return; }
+          this.loading = true; this.page = 'home';
+          this.fetchHistory();
+          this.summaryList = await this.callAPI({ action: 'getSummary', amCode: this.amCode }) || [];
+          this.loading = false;
+        },
+        
+        async fetchHistory() {
+          this.loadingHistory = true;
+          this.historyList = await this.callAPI({ action: 'getHistory', amCode: this.amCode }, { overlay: false }) || [];
+          this.loadingHistory = false;
+        },
+        
+        cleanName(fullName) {
+          if(!fullName) return "";
+          return fullName.replace(/^(นาย|นาง|นางสาว|น\.ส\.|ด\.ช\.|ด\.ญ\.|Mr\.|Mrs\.|Miss|Ms\.)\s*/i, '').trim().split(" ")[0]; 
+        },
+        
+        async startChecking(date) {
+          this.loading = true; this.checkedDate = date;
+          this.showOverlay = true;
+          // yield 1 frame ให้ overlay render ก่อนโหลดหนัก
+          await new Promise(r => requestAnimationFrame(r));
+
+          const txns = await this.callAPI({ action: 'getTransactions', date: date, amCode: this.amCode }, { overlay: false }) || [];
+          const storeGroups = {};
+
+          txns.forEach(t => {
+            if (!storeGroups[t.StoreCode]) {
+              storeGroups[t.StoreCode] = { StoreCode: t.StoreCode, StoreNameE: t.StoreNameE, transactions: [] };
+            }
+            t.cleanNameStr = this.cleanName(t.Ref1);
+            t.isDuplicate = false;
+
+            let autoEmployee = !!t.Depositor_Name;
+
+            t.checkData = {
+              Type: autoEmployee ? 'พนักงาน' : '',
+              Cash_Exist: '', Is_Abnormal: '',
+              Receiver_Emp_ID: t.Receiver_Emp_ID || '',
+              Depositor_Emp_ID: t.Depositor_Emp_ID || '',
+              Depositor_Name: t.Depositor_Name || '',
+              Depositor_Position: t.Depositor_Position || '',
+              Remark: ''
+            };
+
+            t.originalData = {
+              Receiver_Emp_ID: t.Receiver_Emp_ID || '', Depositor_Emp_ID: t.Depositor_Emp_ID || '',
+              Depositor_Name: t.Depositor_Name || '', Depositor_Position: t.Depositor_Position || ''
+            };
+
+            t.isAutoEmployee = autoEmployee;
+
+            storeGroups[t.StoreCode].transactions.push(t);
+          });
+
+          Object.values(storeGroups).forEach(store => {
+            for (let i = 0; i < store.transactions.length; i++) {
+              for (let j = i + 1; j < store.transactions.length; j++) {
+                let n1 = store.transactions[i].cleanNameStr; let n2 = store.transactions[j].cleanNameStr;
+                if (n1 === n2 || this.similarity(n1, n2) > 0.65) {
+                  store.transactions[i].isDuplicate = true; store.transactions[j].isDuplicate = true;
+                }
+              }
+            }
+            store.transactions.sort((a, b) => a.cleanNameStr.localeCompare(b.cleanNameStr, 'th'));
+          });
+
+          this.stores = Object.values(storeGroups);
+          this.currentStoreIndex = 0; this.checkedResults = [];
+          this.page = 'checking';
+          this.loading = false;
+          this.showOverlay = false;
+        },
+        
+        openEmployeeModal(txn) {
+          this.selectedTxn = txn;
+          this.empModal.show();
+        },
+
+        async nextStore() {
+          this.currentStore.transactions.forEach(t => {
+            this.checkedResults.push({ 
+              ...t, 
+              Type: t.checkData.Type, 
+              Cash_Exist: t.checkData.Cash_Exist, 
+              Is_Abnormal: t.checkData.Is_Abnormal,
+              Receiver_Emp_ID: t.checkData.Receiver_Emp_ID,
+              Depositor_Emp_ID: t.checkData.Depositor_Emp_ID,
+              Depositor_Name: t.checkData.Depositor_Name,
+              Depositor_Position: t.checkData.Depositor_Position,
+              Remark: t.checkData.Remark
+            });
+          });
+
+          if (this.currentStoreIndex < this.stores.length - 1) {
+            this.currentStoreIndex++;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            this.loading = true;
+            await this.callAPI({ action: 'saveResult', results: this.checkedResults, amLogin: this.amCode });
+            this.prepareReportData(this.checkedDate);
+          }
+        },
+        
+        async viewHistoryDetail(date) {
+          document.getElementById('closeHistoryBtn').click();
+          this.loading = true; this.checkedDate = date;
+          await this.prepareReportData(date);
+        },
+
+        async prepareReportData(date) {
+          this.reportSummary = await this.callAPI({ action: 'getReport', date: date, amLogin: this.amCode });
+          this.detailData = await this.callAPI({ action: 'getHistoryDetail', date: date, amCode: this.amCode }) || [];
+          this.page = 'report'; this.loading = false;
+          this.fetchHistory();
+        },
+
+        // ✅ เปิดหน้าแก้ไข — โหลด row ทั้งหมดของวันนั้น พร้อม rowId
+        async editHistoryDetail(date) {
+          document.getElementById('closeHistoryBtn').click();
+          this.loading = true; this.checkedDate = date;
+          const rows = await this.callAPI({ action: 'getHistoryDetail', date: date, amCode: this.amCode }) || [];
+          // ทำสำเนาตัวแปร (เพื่อให้แก้ได้โดยตรง)
+          this.editList = rows.map(r => ({ ...r }));
+          this.page = 'edit'; this.loading = false;
+        },
+
+        // ✅ บันทึกการแก้ไข — update ทีละ row ผ่าน updateCheckedRow
+        async saveEdits() {
+          if (this.editList.length === 0) return;
+          this.loading = true;
+          let okCount = 0, errCount = 0;
+          for (const r of this.editList) {
+            const fields = {
+              Type: r.Type, Cash_Exist: r.Cash_Exist, Is_Abnormal: r.Is_Abnormal,
+              Receiver_Emp_ID: r.Receiver_Emp_ID || '',
+              Depositor_Emp_ID: r.Depositor_Emp_ID || '',
+              Depositor_Name: r.Depositor_Name || '',
+              Depositor_Position: r.Depositor_Position || '',
+              Remark: r.Remark || ''
+            };
+            const res = await this.callAPI({ action: 'updateCheckedRow', rowId: r.rowId, fields: fields }, { overlay: false });
+            if (res && res.ok) okCount++; else errCount++;
+          }
+          this.loading = false;
+          if (errCount === 0) {
+            this.showToast('✅ บันทึกการแก้ไขสำเร็จ ' + okCount + ' รายการ');
+          } else {
+            this.showToast('⚠️ สำเร็จ ' + okCount + ' | ผิดพลาด ' + errCount + ' รายการ', 3500);
+          }
+          // กลับหน้าหลัก + refresh
+          this.page = 'home';
+          this.loadSummary();
+        },
+
+        shareReport() {
+          const captureElement = document.getElementById('reportCapture');
+          if (!captureElement) return;
+          this.copyReportMobile(false);
+          this.showToast('📋 คัดลอกข้อความสรุปแล้ว — เปิด LINE แล้วกดวางได้เลย', 3500);
+
+          const blinkEls = captureElement.querySelectorAll('.blink-text');
+          blinkEls.forEach(el => el.style.animation = 'none');
+
+          // ✅ แสดง overlay ขณะ html2canvas ทำงาน (scale 3 = หนัก)
+          this.showOverlay = true;
+
+          // ปรับ scale เป็น 3 และใช้เป็น PNG
+          html2canvas(captureElement, { scale: 3, backgroundColor: '#ffffff', useCORS: true }).then(canvas => {
+            blinkEls.forEach(el => el.style.animation = '');
+            const fileName = `Cenpay_Table_${this.amCode}_${this.checkedDate.replace(/\//g, '-')}.png`;
+            canvas.toBlob((blob) => {
+              this.showOverlay = false;
+              if (!blob) return;
+              const file = new File([blob], fileName, { type: 'image/png' });
+              if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                navigator.share({ files: [file] }).catch((error) => { this.fallbackDownload(canvas, fileName); });
+              } else { this.fallbackDownload(canvas, fileName); }
+            }, 'image/png');
+          }).catch(err => {
+            blinkEls.forEach(el => el.style.animation = '');
+            this.showOverlay = false;
+            this.showToast('⚠️ เกิดข้อผิดพลาด: ' + err.message, 3500);
+          });
+        },
+
+        fallbackDownload(canvas, fileName) {
+          const link = document.createElement('a'); link.download = fileName; link.href = canvas.toDataURL('image/png'); link.click();
+        },
+
+        copyReportMobile(showAlert = true) {
+          const textToCopy = `AM: ${this.amCode}\nสรุปการตรวจสอบ Cenpay Alert\nวันที่: ${this.formatShortDate(this.checkedDate)}\nจำนวนรวม = ${this.formatAmount(this.reportSummary.totalTxn)} Txn\nจำนวนบัญชีปลายทางที่ผิดปกติ = ${this.formatAmount(this.reportSummary.abnormalCount)} Txn\nบัญชีรับโอนเป็นพนักงานสาขา = ${this.formatAmount(this.reportSummary.employeeCount)} Txn`;
+          const textArea = document.createElement("textarea"); textArea.value = textToCopy;
+          textArea.style.position = "fixed"; textArea.style.top = "-9999px"; textArea.style.left = "-9999px";
+          document.body.appendChild(textArea); textArea.focus(); textArea.select();
+          try {
+            const successful = document.execCommand('copy');
+            if (successful && showAlert) { this.showToast('✅ คัดลอกข้อความแล้ว นำไปวางได้เลย!'); }
+          } catch (err) {
+            if (navigator.clipboard) { navigator.clipboard.writeText(textToCopy).then(() => { if(showAlert) this.showToast('✅ คัดลอกข้อความแล้ว นำไปวางได้เลย!'); }); }
+          }
+          document.body.removeChild(textArea);
+        },
+        
+        downloadExcel() {
+          if(!this.detailData || this.detailData.length === 0) { this.showToast('⚠️ ไม่พบข้อมูลสำหรับดาวน์โหลด'); return; }
+          const excelData = [];
+          
+          excelData.push([
+            "DM", "StoreCode", "StoreNameE", "Ref1", "Amount", "Txn", "BillType", "date", 
+            "เป็นพนักงาน/ลูกค้า", "มีเงินสดจริงหรือไม่", "มีความผิดปกติหรือไม่",
+            "Receiver Employee ID", "Depositor Employee ID", "Depositor Name", "Depositor Position", "หมายเหตุ"
+          ]);
+          
+          this.detailData.forEach(row => {
+            let cashStatus = row.Cash_Exist === 'มี' ? 'มีเงินสดจริง' : (row.Cash_Exist === 'ไม่มี' ? 'ไม่มีเงินสดจริง' : row.Cash_Exist);
+            let abnormalStatus = row.Is_Abnormal === 'ใช่' ? 'ผิดปกติ' : 'ไม่ผิดปกติ';
+            
+            excelData.push([
+              row.DM || this.amCode, row.StoreCode, row.StoreNameE, row.Ref1, row.Amount, row.Txn, row.BillType,
+              row.date ? this.formatShortDate(row.date) : this.formatShortDate(this.checkedDate),
+              row.Type, cashStatus, abnormalStatus,
+              row.Receiver_Emp_ID, row.Depositor_Emp_ID, row.Depositor_Name, row.Depositor_Position, row.Remark
+            ]);
+          });
+
+          const ws = XLSX.utils.aoa_to_sheet(excelData);
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "Checked_Data");
+          XLSX.writeFile(wb, `Cenpay_Report_${this.amCode}_${this.checkedDate.replace(/\//g, '-')}.xlsx`);
+        }
+      }
+    });
+
+    // ✅ Register Service Worker (สำหรับ PWA)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./sw.js')
+          .then(function (reg) { console.log('✅ SW registered:', reg.scope); })
+          .catch(function (err) { console.log('SW registration failed:', err); });
+      });
+    }
+  </script>
+</body>
+</html>

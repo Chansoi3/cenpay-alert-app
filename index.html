@@ -626,8 +626,11 @@
                 <div class="mb-3">
                   <div class="mb-1 d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div class="text-dark"><strong>ชื่อบัญชี:</strong> <span :class="{'text-danger fw-bold': txn.isDuplicate}">{{ txn.Ref1 }}</span></div>
-                    <button class="btn btn-sm btn-outline-primary py-1 px-2" @click="openDepositModal(txn.Ref1)">
+                    <button class="btn btn-sm py-1 px-2"
+                            :class="depositCache[txn.Ref1] > 0 ? 'btn-danger' : 'btn-outline-primary'"
+                            @click="openDepositModal(txn.Ref1)">
                       <i class="fa-solid fa-clock-rotate-left me-1"></i>เช็คประวัตินำฝาก
+                      <span v-if="depositCache[txn.Ref1] > 0" class="badge bg-light text-danger ms-1">{{ depositCache[txn.Ref1] }}</span>
                     </button>
                   </div>
                   <div>
@@ -804,8 +807,11 @@
             <div class="mb-2">
               <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div class="text-dark"><strong>ชื่อบัญชี:</strong> {{ txn.Ref1 }}</div>
-                <button class="btn btn-sm btn-outline-primary py-1 px-2" @click="openDepositModal(txn.Ref1)">
+                <button class="btn btn-sm py-1 px-2"
+                        :class="depositCache[txn.Ref1] > 0 ? 'btn-danger' : 'btn-outline-primary'"
+                        @click="openDepositModal(txn.Ref1)">
                   <i class="fa-solid fa-clock-rotate-left me-1"></i>เช็คประวัตินำฝาก
+                  <span v-if="depositCache[txn.Ref1] > 0" class="badge bg-light text-danger ms-1">{{ depositCache[txn.Ref1] }}</span>
                 </button>
               </div>
               <div><strong>ยอด:</strong> <span class="text-success fw-bold">{{ formatAmount(txn.Amount) }} ฿</span>
@@ -996,12 +1002,15 @@
             </div>
 
             <div v-else>
-              <div class="alert alert-warning py-2 mb-3">
-                <i class="fa-solid fa-triangle-exclamation me-1"></i>
-                พบ <strong>{{ depositList.length }}</strong> รายการนำฝากย้อนหลัง
-                <span v-if="depositList.filter(d => d.Is_Abnormal === 'ใช่').length > 0" class="text-danger fw-bold">
-                  • มี {{ depositList.filter(d => d.Is_Abnormal === 'ใช่').length }} รายการผิดปกติ
-                </span>
+              <div class="alert alert-danger py-2 mb-3" style="border: 2px solid var(--c-red-dark); background: #fff5f5;">
+                <i class="fa-solid fa-triangle-exclamation me-1 text-danger"></i>
+                <span class="text-dark">พบ</span>
+                <strong class="text-danger" style="font-size: 1.3rem;">{{ depositList.length }}</strong>
+                <span class="text-dark">รายการนำฝากย้อนหลัง 30 วัน</span>
+                <div v-if="depositList.filter(d => d.Is_Abnormal === 'ใช่').length > 0" class="text-danger fw-bold mt-1">
+                  <i class="fa-solid fa-circle-exclamation me-1"></i>
+                  ⚠️ มี {{ depositList.filter(d => d.Is_Abnormal === 'ใช่').length }} รายการที่เคยถูกบันทึกว่า "ผิดปกติ"
+                </div>
               </div>
 
               <div class="table-responsive">
@@ -1081,6 +1090,7 @@
         depositLoading: false,
         depositList: [],
         depositTargetName: '',
+        depositCache: {},   // ✅ { Ref1: count } — cache ผลเช็คแล้ว เพื่อ badge แดง
 
         // ✅ UX: state ใหม่สำหรับ overlay + toast
         showOverlay: false,
@@ -1337,6 +1347,18 @@
           const result = await this.callAPI({ action: 'getDepositHistory', ref1: ref1 }, { overlay: false });
           this.depositList = Array.isArray(result) ? result : [];
           this.depositLoading = false;
+
+          // ✅ แจ้งเตือนด้วย toast ถ้าพบประวัตินำฝาก
+          const count = this.depositList.length;
+          // cache ผลไว้ สำหรับแสดง badge แดงที่ปุ่ม
+          this.$set(this.depositCache, ref1, count);
+          if (count > 0) {
+            const abnormalCount = this.depositList.filter(d => d.Is_Abnormal === 'ใช่').length;
+            const msg = abnormalCount > 0
+              ? '⚠️ พบ ' + count + ' รายการนำฝาก (เคยผิดปกติ ' + abnormalCount + ' ครั้ง)'
+              : '⚠️ พบ ' + count + ' รายการนำฝากย้อนหลัง 30 วัน';
+            this.showToast(msg, 4000);
+          }
         },
 
         async nextStore() {
